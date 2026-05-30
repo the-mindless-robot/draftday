@@ -4,6 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import ClientSessionProvider from "@/components/session-provider"
 
 const jetbrainsMonoHeading = JetBrains_Mono({
   subsets: ["latin"],
@@ -36,7 +37,9 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
-          <TooltipProvider>{children}</TooltipProvider>
+          <ClientSessionProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </ClientSessionProvider>
         </ThemeProvider>
       </body>
     </html>
