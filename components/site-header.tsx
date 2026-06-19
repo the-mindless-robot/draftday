@@ -1,18 +1,11 @@
 "use client"
 
 import { SearchForm } from "@/components/search-form"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useSidebar } from "@/components/ui/sidebar"
 import { PanelLeftIcon } from "lucide-react"
+import Link from "next/link"
 
 export function SiteHeader() {
   const { toggleSidebar } = useSidebar()
@@ -26,24 +19,20 @@ export function SiteHeader() {
           size="icon"
           onClick={toggleSidebar}
         >
-          <PanelLeftIcon
-          />
+          <PanelLeftIcon />
         </Button>
         <Separator
           orientation="vertical"
           className="mr-2 data-vertical:h-4 data-vertical:self-auto"
         />
-        <Breadcrumb className="hidden sm:block">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="#">Build Your Application</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div className="flex gap-3">
+          <Button variant={"secondary"} asChild>
+            <Link href="/dashboard">Players</Link>
+          </Button>
+          <Button variant={"secondary"} asChild>
+            <Link href="/teams">Teams</Link>
+          </Button>
+        </div>
         <SearchForm className="w-full sm:ml-auto sm:w-auto" />
       </div>
     </header>

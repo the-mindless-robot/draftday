@@ -16,15 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { TerminalSquareIcon, BotIcon, TerminalIcon } from "lucide-react"
-import { useSession } from "next-auth/react"
-import { redirect } from "next/navigation"
-
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Draflist",
@@ -100,17 +92,6 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: session } = useSession()
-  if (!session) {
-    redirect("/login")
-  }
-  const { user } = session
-  const navUser = {
-    name: user.name ?? "unknown",
-    email: user.email ?? "unknown",
-    avatar: user.image ?? "",
-  }
-  console.log("session", session)
   return (
     <Sidebar
       className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
@@ -139,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={navUser} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )
