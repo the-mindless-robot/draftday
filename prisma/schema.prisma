@@ -89,42 +89,46 @@ model Player {
   @@map("players")
 }
 
-// One row per import session — audit log only, no FK back to PlayerRanking
+// Audit log — one record per import session
 model RankingImport {
-  id         String   @id @default(cuid())
-  source     String   // "fbg" | "espn"
-  position   String   // "overall" | "QB" | "RB" | "WR" | "TE" | "FLEX" | "PK"
+  id         String          @id @default(cuid())
+  source     String          // "fbg" | "espn"
+  position   String          // "overall" | "QB" | "RB" | "WR" | "TE" | "FLEX" | "PK"
   season     Int
-  week       Int      @default(0)
-  rowCount   Int      @map("row_count")
-  importedAt DateTime @default(now()) @map("imported_at")
+  rowCount   Int             @map("row_count")
+  importedAt DateTime        @default(now()) @map("imported_at")
+
+  rankings   PlayerRanking[]
 
   @@map("ranking_imports")
 }
 
-// One row per (player × source × season × week) — upserted as imports arrive
+// One row per (player × import session) — never updated, only inserted
 model PlayerRanking {
-  id             String   @id @default(cuid())
-  playerId       String   @map("player_id")
-  source         String   // "fbg" | "espn"
+  id             String        @id @default(cuid())
+  playerId       String        @map("player_id")
+  importId       String        @map("import_id")
+
+  // Denormalized from RankingImport for join-free queries
+  source         String
+  position       String
   season         Int
-  week           Int      @default(0)
+  importedAt     DateTime      @map("imported_at")
 
-  // Overall ranking — from Overall import
-  overallRank    Int?     @map("overall_rank")
-  pos            String?  // "QB1", "RB3" — positional label from Overall import
-
-  // Positional ranking — from position-specific import
-  positionalRank Int?     @map("positional_rank")
-
-  // Projections — from Overall import
-  projPoints     Float?   @map("proj_points")
-  projGames      Float?   @map("proj_games")
+  // Overall import fields
+  overallRank    Int?          @map("overall_rank")
+  pos            String?       // "QB1", "RB3"
+  projPoints     Float?        @map("proj_points")
+  projGames      Float?        @map("proj_games")
   downside       Float?
   upside         Float?
 
-  player         Player   @relation(fields: [playerId], references: [id])
+  // Positional import fields
+  positionalRank Int?          @map("positional_rank")
 
-  @@unique([playerId, source, season, week])
+  player         Player        @relation(fields: [playerId], references: [id])
+  import         RankingImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, importId])
   @@map("player_rankings")
 }

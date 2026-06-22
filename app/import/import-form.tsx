@@ -1,16 +1,35 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ChevronDownIcon, ChevronUpIcon, Loader2Icon } from "lucide-react"
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  Loader2Icon,
+  Trash2Icon,
+} from "lucide-react"
 import type { FBGPosition } from "@/lib/parsers/fbg"
 
 type ParsedResult = {
   rows: Record<string, string>[]
   count: number
   totalFound: number
+}
+
+type SaveResult = {
+  importId: string
+  saved: number
+}
+
+type ImportRecord = {
+  id: string
+  source: string
+  position: string
+  season: number
+  rowCount: number
+  importedAt: string
 }
 
 const FBG_POSITIONS: { value: FBGPosition; label: string }[] = [
@@ -21,24 +40,83 @@ const FBG_POSITIONS: { value: FBGPosition; label: string }[] = [
   { value: "TE", label: "TE" },
   { value: "FLEX", label: "FLEX" },
   { value: "PK", label: "PK" },
+  { value: "TD", label: "TD" },
 ]
+
+function ToggleGroup<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (v: T) => void
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex flex-wrap gap-1">
+        {options.map((opt) => (
+          <button
+            key={String(opt.value)}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={[
+              "border px-2.5 py-1 text-xs transition-colors",
+              value === opt.value
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground/50 hover:text-foreground",
+            ].join(" ")}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function ImportForm() {
   const [url, setUrl] = useState("")
   const [html, setHtml] = useState("")
   const [type, setType] = useState<"fbg" | "espn">("fbg")
   const [position, setPosition] = useState<FBGPosition>("overall")
+  const [budget, setBudget] = useState<200 | 250>(250)
+  const [season, setSeason] = useState(2026)
   const [showHtml, setShowHtml] = useState(false)
   const [showJson, setShowJson] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<ParsedResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
-  async function handleSubmit(e: React.FormEvent) {
+  const [parsing, setParsing] = useState(false)
+  const [result, setResult] = useState<ParsedResult | null>(null)
+  const [parseError, setParseError] = useState<string | null>(null)
+
+  const [saving, setSaving] = useState(false)
+  const [saveResult, setSaveResult] = useState<SaveResult | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  const [history, setHistory] = useState<ImportRecord[]>([])
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  async function fetchHistory() {
+    const res = await fetch("/api/import/history")
+    if (res.ok) setHistory(await res.json())
+  }
+
+  useEffect(() => {
+    fetch("/api/import/history")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setHistory(data) })
+  }, [])
+
+  async function handleParse(e: React.SyntheticEvent) {
     e.preventDefault()
-    setLoading(true)
-    setError(null)
+    setParsing(true)
+    setParseError(null)
     setResult(null)
+    setSaveResult(null)
+    setSaveError(null)
 
     try {
       const res = await fetch("/api/import", {
@@ -51,34 +129,71 @@ export function ImportForm() {
           position: type === "fbg" ? position : undefined,
         }),
       })
-
       const data = await res.json()
+      if (!res.ok) setParseError(data.error ?? "Something went wrong.")
+      else setResult(data)
+    } catch {
+      setParseError("Network error. Please try again.")
+    } finally {
+      setParsing(false)
+    }
+  }
 
+  async function handleSave() {
+    if (!result) return
+    setSaving(true)
+    setSaveError(null)
+    setSaveResult(null)
+
+    try {
+      const res = await fetch("/api/import/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rows: result.rows,
+          source: type,
+          position: type === "fbg" ? position : "overall",
+          budget,
+          season,
+        }),
+      })
+      const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong.")
+        setSaveError(data.error ?? "Save failed.")
       } else {
-        setResult(data)
+        setSaveResult(data)
+        fetchHistory()
       }
     } catch {
-      setError("Network error. Please try again.")
+      setSaveError("Network error.")
     } finally {
-      setLoading(false)
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/import/${id}`, { method: "DELETE" })
+      if (res.ok) setHistory((prev) => prev.filter((r) => r.id !== id))
+    } finally {
+      setDeletingId(null)
     }
   }
 
   const columns = result?.rows[0] ? Object.keys(result.rows[0]) : []
 
   return (
-    <div className="flex w-full max-w-5xl flex-col gap-6 p-6">
+    <div className="flex w-full max-w-5xl flex-col gap-8 p-6">
       <div>
         <h1 className="text-sm font-medium">Data Import</h1>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Add player data and rankings
+          Parse and save player rankings to the database
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* Source type */}
+      <form onSubmit={handleParse} className="flex flex-col gap-4">
+        {/* Source */}
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs">Source</Label>
           <div className="flex gap-4">
@@ -103,37 +218,47 @@ export function ImportForm() {
           </div>
         </div>
 
-        {/* Position selector — FBG only */}
+        {/* FBG-specific selectors */}
         {type === "fbg" && (
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs">Position</Label>
-            <div className="flex flex-wrap gap-1">
-              {FBG_POSITIONS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setPosition(value)}
-                  className={[
-                    "border px-2.5 py-1 text-xs transition-colors",
-                    position === value
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted-foreground hover:border-foreground/50 hover:text-foreground",
-                  ].join(" ")}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          <>
+            <ToggleGroup
+              label="Position"
+              options={FBG_POSITIONS}
+              value={position}
+              onChange={setPosition}
+            />
             {position !== "overall" && (
-              <p className="text-xs text-muted-foreground">
-                Position mode — extracts tier and rank only, for updating
-                existing player records.
+              <p className="-mt-2 text-xs text-muted-foreground">
+                Position mode — extracts tier and rank only.
               </p>
             )}
-          </div>
+            <ToggleGroup
+              label="Budget"
+              options={[
+                { value: 250 as const, label: "$250" },
+                { value: 200 as const, label: "$200" },
+              ]}
+              value={budget}
+              onChange={setBudget}
+            />
+          </>
         )}
 
-        {/* URL input */}
+        {/* Season */}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="season" className="text-xs">
+            Season
+          </Label>
+          <Input
+            id="season"
+            type="number"
+            value={season}
+            onChange={(e) => setSeason(parseInt(e.target.value) || 2026)}
+            className="w-24"
+          />
+        </div>
+
+        {/* URL */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="url" className="text-xs">
             Page URL
@@ -146,12 +271,11 @@ export function ImportForm() {
             onChange={(e) => setUrl(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Works for public pages. For login-protected pages, paste the HTML
-            below.
+            For login-protected pages, paste the HTML below instead.
           </p>
         </div>
 
-        {/* HTML paste toggle */}
+        {/* HTML paste */}
         <div className="flex flex-col gap-1.5">
           <button
             type="button"
@@ -165,10 +289,9 @@ export function ImportForm() {
             )}
             {showHtml ? "Hide" : "Paste page HTML (for login-protected pages)"}
           </button>
-
           {showHtml && (
             <textarea
-              placeholder="Paste the full page HTML here. In Chrome: right-click → Inspect → right-click <html> → Copy → Copy outerHTML"
+              placeholder="In Chrome: right-click → Inspect → right-click <html> → Copy → Copy outerHTML"
               value={html}
               onChange={(e) => setHtml(e.target.value)}
               rows={8}
@@ -179,18 +302,18 @@ export function ImportForm() {
 
         <Button
           type="submit"
-          disabled={loading || (!url && !html)}
+          disabled={parsing || (!url && !html)}
           className="w-fit"
         >
-          {loading && <Loader2Icon className="animate-spin" />}
-          {loading ? "Parsing..." : "Parse Table"}
+          {parsing && <Loader2Icon className="animate-spin" />}
+          {parsing ? "Parsing..." : "Parse Table"}
         </Button>
       </form>
 
-      {/* Error */}
-      {error && (
+      {/* Parse error */}
+      {parseError && (
         <div className="border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          {error}
+          {parseError}
         </div>
       )}
 
@@ -214,11 +337,11 @@ export function ImportForm() {
           </div>
 
           {showJson ? (
-            <pre className="max-h-[500px] overflow-auto rounded-none border border-border bg-muted/50 p-3 font-mono text-xs">
+            <pre className="max-h-100 overflow-auto rounded-none border border-border bg-muted/50 p-3 font-mono text-xs">
               {JSON.stringify(result.rows, null, 2)}
             </pre>
           ) : (
-            <div className="max-h-[500px] overflow-auto border border-border">
+            <div className="max-h-100 overflow-auto border border-border">
               <table className="w-full border-collapse text-xs">
                 <thead className="sticky top-0 bg-muted">
                   <tr>
@@ -252,6 +375,88 @@ export function ImportForm() {
               </table>
             </div>
           )}
+
+          {/* Save */}
+          <div className="flex items-center gap-3 border-t border-border pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSave}
+              disabled={saving || !!saveResult}
+            >
+              {saving && <Loader2Icon className="animate-spin" />}
+              {saving ? "Saving..." : saveResult ? "Saved" : "Save to Database"}
+            </Button>
+            {saveResult && (
+              <span className="text-xs text-muted-foreground">
+                {saveResult.saved} rows saved &middot; import{" "}
+                <span className="font-mono">
+                  {saveResult.importId.slice(0, 8)}
+                </span>
+              </span>
+            )}
+            {saveError && (
+              <span className="text-xs text-destructive">{saveError}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Import history */}
+      {history.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xs font-medium">Import History</h2>
+          <div className="border border-border">
+            <table className="w-full border-collapse text-xs">
+              <thead className="bg-muted">
+                <tr>
+                  {["Source", "Position", "Season", "Rows", "Imported", ""].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="border-b border-border px-2.5 py-1.5 text-left font-medium"
+                      >
+                        {h}
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((record) => (
+                  <tr
+                    key={record.id}
+                    className="border-b border-border/50 last:border-0"
+                  >
+                    <td className="px-2.5 py-1.5 uppercase">{record.source}</td>
+                    <td className="px-2.5 py-1.5 uppercase">
+                      {record.position}
+                    </td>
+                    <td className="px-2.5 py-1.5">{record.season}</td>
+                    <td className="px-2.5 py-1.5">{record.rowCount}</td>
+                    <td className="px-2.5 py-1.5 text-muted-foreground">
+                      {new Date(record.importedAt).toLocaleString()}
+                    </td>
+                    <td className="px-2.5 py-1.5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(record.id)}
+                        disabled={deletingId === record.id}
+                        className="text-muted-foreground transition-colors hover:text-destructive disabled:opacity-40"
+                        title="Delete import"
+                      >
+                        {deletingId === record.id ? (
+                          <Loader2Icon className="size-3 animate-spin" />
+                        ) : (
+                          <Trash2Icon className="size-3" />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
