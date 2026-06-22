@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { parseFBG } from "@/lib/parsers/fbg"
+import { parseFBG, type FBGPosition } from "@/lib/parsers/fbg"
 import { parseESPN } from "@/lib/parsers/espn"
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { url, html, type } = body as {
+  const { url, html, type, position } = body as {
     url?: string
     html?: string
     type: "fbg" | "espn"
+    position?: FBGPosition
   }
 
   let rawHtml = html
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
   const ROW_CAP = 300
 
   try {
-    const allRows = type === "fbg" ? parseFBG(rawHtml) : parseESPN(rawHtml)
+    const allRows = type === "fbg" ? parseFBG(rawHtml, position ?? "overall") : parseESPN(rawHtml)
 
     if (allRows.length === 0) {
       return NextResponse.json(
