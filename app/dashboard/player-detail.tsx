@@ -78,7 +78,7 @@ function BiBar({
         <span className="flex-1 text-right">Downside</span>
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="w-6 text-right text-xs tabular-nums text-green-400">
+        <span className="w-6 text-right text-xs text-green-400 tabular-nums">
           {upside?.toFixed(1) ?? "—"}
         </span>
         <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted">
@@ -91,7 +91,7 @@ function BiBar({
             style={{ left: "50%", width: `${downPct}%` }}
           />
         </div>
-        <span className="w-6 text-xs tabular-nums text-red-400">
+        <span className="w-6 text-xs text-red-400 tabular-nums">
           {downside?.toFixed(1) ?? "—"}
         </span>
       </div>
@@ -99,7 +99,13 @@ function BiBar({
   )
 }
 
-export function PlayerDetail({ player, globalMax }: { player: RankedPlayer | null; globalMax: number }) {
+export function PlayerDetail({
+  player,
+  globalMax,
+}: {
+  player: RankedPlayer | null
+  globalMax: number
+}) {
   if (!player) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -120,7 +126,12 @@ export function PlayerDetail({ player, globalMax }: { player: RankedPlayer | nul
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="shrink-0">
-          <p className={cn("rounded border px-2 py-1 text-xl leading-none font-bold tabular-nums", posColor(player.pos))}>
+          <p
+            className={cn(
+              "rounded border px-2 py-1 text-xl leading-none font-bold tabular-nums",
+              posColor(player.pos)
+            )}
+          >
             {player.positionalRank != null ? (
               <>
                 <span>{player.pos ?? ""}</span>
@@ -148,45 +159,6 @@ export function PlayerDetail({ player, globalMax }: { player: RankedPlayer | nul
 
       <div className="h-px bg-border/50" />
 
-      {/* Rankings */}
-      <div>
-        <SectionLabel>Rankings</SectionLabel>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <KV label="Overall Rank" value={player.overallRank} />
-          <KV label="Overall Tier" value={player.overallTier} />
-          <KV
-            label="Pos Rank"
-            value={
-              player.positionalRank != null
-                ? `${player.pos ?? ""}${player.positionalRank}`
-                : null
-            }
-          />
-          <KV label="Pos Tier" value={player.positionalTier} />
-        </div>
-      </div>
-
-      <div className="h-px bg-border/50" />
-
-      {/* Projections */}
-      <div>
-        <SectionLabel>Projections</SectionLabel>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <KV label="Proj Points" value={player.projPoints?.toFixed(1)} />
-          <KV label="Proj Games" value={player.projGames?.toFixed(1)} />
-        </div>
-      </div>
-
-      <div className="h-px bg-border/50" />
-
-      {/* Risk */}
-      <div>
-        <SectionLabel>Risk Profile</SectionLabel>
-        <BiBar upside={player.upside} downside={player.downside} max={globalMax} />
-      </div>
-
-      <div className="h-px bg-border/50" />
-
       {/* Salary */}
       <div>
         <SectionLabel>Salary Cap</SectionLabel>
@@ -196,6 +168,18 @@ export function PlayerDetail({ player, globalMax }: { player: RankedPlayer | nul
           <KV label="FBG Scaled" value={player.scFbgScaled} />
           <KV label="ESPN $200k" value={player.scEspn200} />
         </div>
+      </div>
+
+      <div className="h-px bg-border/50" />
+
+      {/* Risk */}
+      <div>
+        <SectionLabel>Risk Profile</SectionLabel>
+        <BiBar
+          upside={player.upside}
+          downside={player.downside}
+          max={globalMax}
+        />
       </div>
 
       <div className="h-px bg-border/50" />
@@ -213,6 +197,37 @@ export function PlayerDetail({ player, globalMax }: { player: RankedPlayer | nul
                 : null
             }
           />
+        </div>
+      </div>
+
+      <div className="h-px bg-border/50" />
+
+      {/* Projections */}
+      <div>
+        <SectionLabel>Projections</SectionLabel>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          <KV label="Proj Points" value={player.projPoints?.toFixed(1)} />
+          <KV label="Proj Games" value={player.projGames?.toFixed(1)} />
+        </div>
+      </div>
+
+      <div className="h-px bg-border/50" />
+
+      {/* Rankings */}
+      <div>
+        <SectionLabel>Rankings</SectionLabel>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          <KV label="Overall Rank" value={player.overallRank} />
+          <KV label="Overall Tier" value={player.overallTier} />
+          <KV
+            label="Pos Rank"
+            value={
+              player.positionalRank != null
+                ? `${player.pos ?? ""}${player.positionalRank}`
+                : null
+            }
+          />
+          <KV label="Pos Tier" value={player.positionalTier} />
         </div>
       </div>
     </div>
