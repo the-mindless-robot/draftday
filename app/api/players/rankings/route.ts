@@ -24,6 +24,7 @@ export async function GET() {
         overallTier: p.overallTier,
         overallRank: r.overallRank,
         pos: r.pos,
+        positionalRank: r.positionalRank,
         projPoints: r.projPoints,
         projGames: r.projGames,
         upside: r.upside,
