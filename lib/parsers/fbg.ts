@@ -1,16 +1,31 @@
 import * as cheerio from "cheerio"
 
-export type FBGPosition = "overall" | "QB" | "RB" | "WR" | "TE" | "FLEX" | "PK"
+export type FBGPosition =
+  | "overall"
+  | "QB"
+  | "RB"
+  | "WR"
+  | "TE"
+  | "FLEX"
+  | "PK"
+  | "TD"
 
-export function parseFBG(html: string, position: FBGPosition = "overall"): Record<string, string>[] {
+export function parseFBG(
+  html: string,
+  position: FBGPosition = "overall"
+): Record<string, string>[] {
   const $ = cheerio.load(html)
 
   const table = $("#rankings-table")
   if (table.length === 0) {
-    throw new Error("Could not find #rankings-table. Make sure you copied the full rendered page HTML.")
+    throw new Error(
+      "Could not find #rankings-table. Make sure you copied the full rendered page HTML."
+    )
   }
 
-  return position === "overall" ? parseFullTable($, table) : parseTiersOnly($, table)
+  return position === "overall"
+    ? parseFullTable($, table)
+    : parseTiersOnly($, table)
 }
 
 function parseFullTable(
@@ -19,11 +34,16 @@ function parseFullTable(
 ): Record<string, string>[] {
   // Build headers — the Salary Cap <th> has a <select> inside, pull text from <label>
   const headers: string[] = []
-  table.find("thead tr").first().find("th, td").each((_, cell) => {
-    const label = $(cell).find("label").text().trim()
-    const text = label || $(cell).clone().children().remove().end().text().trim()
-    headers.push(text || `col_${headers.length}`)
-  })
+  table
+    .find("thead tr")
+    .first()
+    .find("th, td")
+    .each((_, cell) => {
+      const label = $(cell).find("label").text().trim()
+      const text =
+        label || $(cell).clone().children().remove().end().text().trim()
+      headers.push(text || `col_${headers.length}`)
+    })
 
   const rows: Record<string, string>[] = []
   let currentTier = ""

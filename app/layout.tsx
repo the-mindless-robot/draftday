@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import ClientSessionProvider from "@/components/session-provider"
-import { auth } from "@/auth"
 
 const jetbrainsMonoHeading = JetBrains_Mono({
   subsets: ["latin"],
