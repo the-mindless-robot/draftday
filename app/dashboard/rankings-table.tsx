@@ -6,11 +6,14 @@ import {
   type SortingState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { Search } from "lucide-react"
 import { Fragment, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { SortableHeader } from "@/components/ui/data-table"
 import {
   Table,
@@ -195,6 +198,7 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
   "use no memo"
   const [activePosition, setActivePosition] = useState<Position>("overall")
   const [sorting, setSorting] = useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState("")
 
   const data = useMemo(() => {
     if (activePosition === "overall") return players
@@ -226,9 +230,13 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
     data,
     columns,
     meta: { maxUpside, maxDownside, activePosition },
-    state: { sorting },
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, value) =>
+      row.original.name.toLowerCase().includes(String(value).toLowerCase()),
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
@@ -239,26 +247,37 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-semibold">Player Rankings</h2>
         <span className="text-xs text-muted-foreground">
-          {data.length} players
+          {table.getFilteredRowModel().rows.length} players
         </span>
       </div>
 
-      <div className="flex gap-1">
-        {POSITIONS.map((pos) => (
-          <Button
-            key={pos}
-            onClick={() => setActivePosition(pos)}
-            variant={"outline"}
-            className={cn(
-              "px-2.5 py-1 text-xs font-medium transition-colors",
-              activePosition === pos
-                ? "bg-primary!"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            {pos === "overall" ? "Overall" : pos}
-          </Button>
-        ))}
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
+          {POSITIONS.map((pos) => (
+            <Button
+              key={pos}
+              onClick={() => setActivePosition(pos)}
+              variant="outline"
+              className={cn(
+                "px-2.5 py-1 text-xs font-medium transition-colors",
+                activePosition === pos
+                  ? "bg-primary!"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              {pos === "overall" ? "Overall" : pos}
+            </Button>
+          ))}
+        </div>
+        <div className="relative ml-auto w-48">
+          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Filter by name…"
+            className="h-7 pl-7 text-xs"
+          />
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
