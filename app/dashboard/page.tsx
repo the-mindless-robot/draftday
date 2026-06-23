@@ -20,7 +20,9 @@ export default async function Page() {
       overallTier: true,
       positionalTier: true,
       overallRank: true,
+      espnOverallRank: true,
       positionalRank: true,
+      espnPositionalRank: true,
       pos: true,
       projPoints: true,
       projGames: true,
@@ -34,8 +36,8 @@ export default async function Page() {
   })
 
   return (
-    <div className="[--header-height:calc(--spacing(14))] h-dvh flex flex-col">
-      <SidebarProvider className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex h-dvh flex-col [--header-height:calc(--spacing(14))]">
+      <SidebarProvider className="flex flex-1 flex-col overflow-hidden">
         <SiteHeader />
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar />

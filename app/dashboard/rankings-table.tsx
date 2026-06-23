@@ -45,6 +45,8 @@ const POSITIONS = [
 ] as const
 type Position = (typeof POSITIONS)[number]
 
+const DELTA_THRESHOLD = 10
+
 const FLEX_POS = ["RB", "WR", "TE"]
 const PK_POS = ["K", "PK"]
 
@@ -58,7 +60,9 @@ type RankedPlayer = {
   overallTier: string | null
   positionalTier: string | null
   overallRank: number | null
+  espnOverallRank: number | null
   positionalRank: number | null
+  espnPositionalRank: number | null
   pos: string | null
   projPoints: number | null
   projGames: number | null
@@ -139,6 +143,54 @@ const columns: ColumnDef<RankedPlayer>[] = [
     },
   },
   {
+    accessorKey: "espnOverallRank",
+    header: ({ column }) => (
+      <SortableHeader column={column} label="ESPN Rank" />
+    ),
+    cell: ({ getValue }) => {
+      return (
+        <span className="font-mono text-muted-foreground">
+          {(getValue() as number) ?? "—"}
+        </span>
+      )
+    },
+  },
+  {
+    id: "rankDelta",
+    header: ({ column }) => <SortableHeader column={column} label="Δ Rank" />,
+    accessorFn: (row) => {
+      if (row.espnOverallRank == null || row.overallRank == null) return null
+      return row.espnOverallRank - row.overallRank
+    },
+    cell: ({ getValue }) => {
+      const delta = getValue() as number | null
+      if (delta == null) return <span className="text-muted-foreground">—</span>
+      const color =
+        delta >= DELTA_THRESHOLD
+          ? "text-green-400"
+          : delta >= 2
+            ? "text-amber-400"
+            : delta <= -DELTA_THRESHOLD
+              ? "text-red-400"
+              : "text-muted-foreground"
+      return (
+        <span className={`font-mono ${color}`}>
+          {delta > 0 ? `+${delta}` : delta}
+        </span>
+      )
+    },
+  },
+  {
+    accessorKey: "name",
+    header: () => <span>Name</span>,
+    cell: ({ row }) => (
+      <span className="font-medium">
+        {row.original.name}
+        {row.original.team ? ` (${row.original.team})` : ""}
+      </span>
+    ),
+  },
+  {
     accessorKey: "pos",
     header: () => <span>Pos</span>,
     cell: ({ row }) => {
@@ -152,6 +204,21 @@ const columns: ColumnDef<RankedPlayer>[] = [
       )
     },
   },
+  {
+    accessorKey: "espnPositionalRank",
+    header: () => <span>ESPN POS</span>,
+    cell: ({ row }) => {
+      const pos = row.original.pos
+      const rank = row.original.espnPositionalRank
+      const label = pos ? `${pos}${rank ?? ""}` : "—"
+      return (
+        <span className={`font-mono font-semibold ${posColor(pos)}`}>
+          {label}
+        </span>
+      )
+    },
+  },
+
   {
     id: "salary",
     header: ({ column }) => (
@@ -184,16 +251,6 @@ const columns: ColumnDef<RankedPlayer>[] = [
         </span>
       )
     },
-  },
-  {
-    accessorKey: "name",
-    header: () => <span>Name</span>,
-    cell: ({ row }) => (
-      <span className="font-medium">
-        {row.original.name}
-        {row.original.team ? ` (${row.original.team})` : ""}
-      </span>
-    ),
   },
   {
     accessorKey: "projPoints",

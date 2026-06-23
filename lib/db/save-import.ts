@@ -17,7 +17,10 @@ function stripNameSuffix(name: string): string {
   return name.replace(/\s+(Jr\.?|Sr\.?|II|III|IV)$/i, "").trim()
 }
 
-function splitPos(val: string | undefined): { pos: string | null; positionalRank: number | null } {
+function splitPos(val: string | undefined): {
+  pos: string | null
+  positionalRank: number | null
+} {
   if (!val) return { pos: null, positionalRank: null }
   const match = val.match(/^([A-Za-z]+)(\d+)$/)
   if (!match) return { pos: val, positionalRank: null }
@@ -53,7 +56,13 @@ export async function saveImport({
           const espnTeamMap: Record<string, string> = { JAC: "JAX" }
           const team = espnTeamMap[String(row.team)] ?? String(row.team)
 
-          const name = String(row.name).trim()
+          const espnNameMap: Record<string, string> = {
+            "Kenneth Walker III": "Ken Walker",
+          }
+          const rawName = String(row.name)
+            .trim()
+            .replace(/\b(Jr|Sr)\./gi, "$1")
+          const name = espnNameMap[rawName] ?? rawName
 
           const buildWhere = (n: string) =>
             pos === "TD"
@@ -76,8 +85,12 @@ export async function saveImport({
           const player =
             (await tx.player.findFirst({ where: buildWhere(name) })) ??
             (pos !== "TD"
-              ? (await tx.player.findFirst({ where: buildWhere(stripNameSuffix(name)) })) ??
-                (await tx.player.findFirst({ where: buildWhereStartsWith(name) }))
+              ? ((await tx.player.findFirst({
+                  where: buildWhere(stripNameSuffix(name)),
+                })) ??
+                (await tx.player.findFirst({
+                  where: buildWhereStartsWith(name),
+                })))
               : null)
 
           if (!player) {
@@ -88,7 +101,7 @@ export async function saveImport({
             })
             console.warn(
               `[ESPN import] no match — tried: "${name}" / "${stripped}" @ ${team}/${pos}\n` +
-              `  DB candidates by name: ${loose.length ? JSON.stringify(loose) : "none"}`
+                `  DB candidates by name: ${loose.length ? JSON.stringify(loose) : "none"}`
             )
             continue
           }

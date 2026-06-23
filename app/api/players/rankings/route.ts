@@ -11,11 +11,17 @@ const select = {
   positionalTier: true,
   overallRank: true,
   positionalRank: true,
+  espnOverallRank: true,
+  espnPositionalRank: true,
   pos: true,
   projPoints: true,
   projGames: true,
   upside: true,
   downside: true,
+  scFbg250: true,
+  scFbg200: true,
+  scFbgScaled: true,
+  scEspn200: true,
 }
 
 export async function GET(request: Request) {
