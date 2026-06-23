@@ -1,38 +1,49 @@
 import { NextResponse } from "next/server"
+import type { FBGPosition } from "@/lib/parsers/fbg"
 import prisma from "@/lib/prisma"
 
-export async function GET() {
+const select = {
+  id: true,
+  name: true,
+  team: true,
+  byeWeek: true,
+  overallTier: true,
+  positionalTier: true,
+  overallRank: true,
+  positionalRank: true,
+  pos: true,
+  projPoints: true,
+  projGames: true,
+  upside: true,
+  downside: true,
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const position = (searchParams.get("position") ?? "overall") as FBGPosition
+
+  if (position === "overall") {
+    const players = await prisma.player.findMany({
+      where: { overallRank: { not: null } },
+      orderBy: { overallRank: "asc" },
+      take: 300,
+      select,
+    })
+    return NextResponse.json(players)
+  }
+
+  // Positional tier comes from positional imports; ranks come from the overall import.
+  // Filter by pos and sort by positionalRank — all on the Player record.
+  const posFilter =
+    position === "FLEX" ? { in: ["RB", "WR", "TE"] } :
+    position === "PK"   ? { in: ["K", "PK"] }        :
+    position
+
   const players = await prisma.player.findMany({
-    include: {
-      rankings: {
-        where: { position: "overall" },
-        orderBy: { importedAt: "desc" },
-        take: 1,
-      },
-    },
+    where: { pos: posFilter, positionalRank: { not: null } },
+    orderBy: { positionalRank: "asc" },
+    select,
   })
 
-  const ranked = players
-    .filter((p) => p.rankings.length > 0 && p.rankings[0].overallRank != null)
-    .map((p) => {
-      const r = p.rankings[0]
-      return {
-        id: p.id,
-        name: p.name,
-        team: p.team,
-        byeWeek: p.byeWeek,
-        overallTier: p.overallTier,
-        overallRank: r.overallRank,
-        pos: r.pos,
-        positionalRank: r.positionalRank,
-        projPoints: r.projPoints,
-        projGames: r.projGames,
-        upside: r.upside,
-        downside: r.downside,
-      }
-    })
-    .sort((a, b) => (a.overallRank ?? Infinity) - (b.overallRank ?? Infinity))
-    .slice(0, 300)
-
-  return NextResponse.json(ranked)
+  return NextResponse.json(players)
 }

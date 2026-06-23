@@ -50,6 +50,18 @@ export async function saveImport({
               ? { scFbg250: row["Salary Cap"] || null }
               : { scFbg200: row["Salary Cap"] || null }
 
+          const { pos, positionalRank } = splitPos(row.Pos)
+
+          const rankFields = {
+            pos,
+            overallRank: toInt(row.Rank),
+            positionalRank,
+            projPoints: toFloat(row.Points),
+            projGames: toFloat(row.Games),
+            upside: toFloat(row.Upside),
+            downside: toFloat(row.Downside),
+          }
+
           const player = await tx.player.upsert({
             where: { fbgId: row.playerId },
             update: {
@@ -59,6 +71,7 @@ export async function saveImport({
               experience: toInt(row.Exp),
               byeWeek: toInt(row.Bye),
               overallTier: row.tier || null,
+              ...rankFields,
               ...scField,
             },
             create: {
@@ -69,11 +82,10 @@ export async function saveImport({
               experience: toInt(row.Exp),
               byeWeek: toInt(row.Bye),
               overallTier: row.tier || null,
+              ...rankFields,
               ...scField,
             },
           })
-
-          const { pos, positionalRank } = splitPos(row.Pos)
 
           await tx.playerRanking.create({
             data: {
@@ -83,35 +95,23 @@ export async function saveImport({
               position,
               season,
               importedAt,
-              overallRank: toInt(row.Rank),
-              pos,
-              positionalRank,
-              projPoints: toFloat(row.Points),
-              projGames: toFloat(row.Games),
-              downside: toFloat(row.Downside),
-              upside: toFloat(row.Upside),
+              overallRank: rankFields.overallRank,
+              pos: rankFields.pos,
+              positionalRank: rankFields.positionalRank,
+              projPoints: rankFields.projPoints,
+              projGames: rankFields.projGames,
+              upside: rankFields.upside,
+              downside: rankFields.downside,
             },
           })
         } else {
-          const player = await tx.player.upsert({
+          await tx.player.upsert({
             where: { fbgId: row.playerId },
             update: { positionalTier: row.tier || null },
             create: {
               fbgId: row.playerId,
               name: row.playerName || row.playerId,
               positionalTier: row.tier || null,
-            },
-          })
-
-          await tx.playerRanking.create({
-            data: {
-              playerId: player.id,
-              importId,
-              source,
-              position,
-              season,
-              importedAt,
-              positionalRank: toInt(row.rank),
             },
           })
         }

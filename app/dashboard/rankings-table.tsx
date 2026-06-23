@@ -20,13 +20,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
 declare module "@tanstack/react-table" {
   interface TableMeta<TData extends RowData> {
     maxUpside: number
     maxDownside: number
+    activePosition: string
   }
 }
+
+const POSITIONS = [
+  "overall",
+  "QB",
+  "RB",
+  "WR",
+  "TE",
+  "TD",
+  "PK",
+  "FLEX",
+] as const
+type Position = (typeof POSITIONS)[number]
 
 type RankedPlayer = {
   id: string
@@ -34,9 +48,10 @@ type RankedPlayer = {
   team: string | null
   byeWeek: number | null
   overallTier: string | null
+  positionalTier: string | null
   overallRank: number | null
-  pos: string | null
   positionalRank: number | null
+  pos: string | null
   projPoints: number | null
   projGames: number | null
   upside: number | null
@@ -44,8 +59,7 @@ type RankedPlayer = {
 }
 
 function posColor(pos: string | null): string {
-  const p = pos?.replace(/\d+$/, "").toUpperCase()
-  switch (p) {
+  switch (pos?.toUpperCase()) {
     case "QB":
       return "text-blue-400"
     case "RB":
@@ -89,20 +103,13 @@ const columns: ColumnDef<RankedPlayer>[] = [
   {
     accessorKey: "overallRank",
     header: ({ column }) => <SortableHeader column={column} label="Rank" />,
-    cell: ({ getValue }) => (
-      <span className="font-mono text-muted-foreground">
-        {getValue() as number}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "name",
-    header: () => <span>Name</span>,
-    cell: ({ row }) => (
-      <span className="font-medium">
-        {row.original.name} {row.original.team ? `(${row.original.team})` : ""}
-      </span>
-    ),
+    cell: ({ getValue }) => {
+      return (
+        <span className="font-mono text-muted-foreground">
+          {getValue() as number}
+        </span>
+      )
+    },
   },
   {
     accessorKey: "pos",
@@ -117,6 +124,16 @@ const columns: ColumnDef<RankedPlayer>[] = [
         </span>
       )
     },
+  },
+
+  {
+    accessorKey: "name",
+    header: () => <span>Name</span>,
+    cell: ({ row }) => (
+      <span className="font-medium">
+        {row.original.name} {row.original.team ? `(${row.original.team})` : ""}
+      </span>
+    ),
   },
   {
     accessorKey: "projPoints",
@@ -136,7 +153,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     accessorKey: "upside",
-    header: () => <span>Upside</span>,
+    header: ({ column }) => <SortableHeader column={column} label="Upside" />,
     cell: ({ getValue, table }) => {
       const v = getValue() as number | null
       if (v == null) return <span className="text-muted-foreground">—</span>
@@ -151,7 +168,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     accessorKey: "downside",
-    header: () => <span>Downside</span>,
+    header: ({ column }) => <SortableHeader column={column} label="Downside" />,
     cell: ({ getValue, table }) => {
       const v = getValue() as number | null
       if (v == null) return <span className="text-muted-foreground">—</span>
@@ -173,15 +190,21 @@ const columns: ColumnDef<RankedPlayer>[] = [
 
 export function RankingsTable() {
   "use no memo"
+  const [activePosition, setActivePosition] = useState<Position>("overall")
   const [data, setData] = useState<RankedPlayer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
 
   useEffect(() => {
+    setLoading(true)
+    setData([])
+    setError(null)
     const fetchRankings = async () => {
       try {
-        const res = await fetch("/api/players/rankings")
+        const res = await fetch(
+          `/api/players/rankings?position=${activePosition}`
+        )
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         setData(await res.json())
       } catch (e) {
@@ -191,7 +214,7 @@ export function RankingsTable() {
       }
     }
     fetchRankings()
-  }, [])
+  }, [activePosition])
 
   const maxUpside = useMemo(
     () => Math.max(...data.map((p) => p.upside ?? 0), 1),
@@ -205,94 +228,114 @@ export function RankingsTable() {
   const table = useReactTable({
     data,
     columns,
-    meta: { maxUpside, maxDownside },
+    meta: { maxUpside, maxDownside, activePosition },
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Loading rankings…
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-destructive">
-        Failed to load rankings: {error}
-      </div>
-    )
-  }
-
   const rows = table.getRowModel().rows
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-semibold">Player Rankings</h2>
         <span className="text-xs text-muted-foreground">
           {data.length} players
         </span>
       </div>
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {rows.map((row, i) => {
-            const tier = row.original.overallTier
-            const prevTier = i > 0 ? rows[i - 1].original.overallTier : tier
-            const showDivider = i > 0 && tier !== prevTier
 
-            return (
-              <Fragment key={row.id}>
-                {showDivider && (
-                  <TableRow className="border-none hover:bg-transparent">
-                    <TableCell colSpan={columns.length} className="px-2 py-1">
-                      <div className="flex items-center gap-2">
-                        <div className="h-px flex-1 bg-border" />
-                        <span className="text-xs text-muted-foreground">
-                          {tier ? `Tier ${tier}` : "Untiered"}
-                        </span>
-                        <div className="h-px flex-1 bg-border" />
-                      </div>
-                    </TableCell>
+      <div className="flex gap-1">
+        {POSITIONS.map((pos) => (
+          <button
+            key={pos}
+            onClick={() => setActivePosition(pos)}
+            className={cn(
+              "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+              activePosition === pos
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            {pos === "overall" ? "Overall" : pos}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+          Loading rankings…
+        </div>
+      ) : error ? (
+        <div className="flex h-48 items-center justify-center text-sm text-destructive">
+          Failed to load rankings: {error}
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {rows.map((row, i) => {
+              const tier =
+                activePosition === "overall"
+                  ? row.original.overallTier
+                  : row.original.positionalTier
+              const prevTier =
+                i > 0
+                  ? activePosition === "overall"
+                    ? rows[i - 1].original.overallTier
+                    : rows[i - 1].original.positionalTier
+                  : tier
+              const showDivider = i > 0 && tier !== prevTier
+
+              return (
+                <Fragment key={row.id}>
+                  {showDivider && (
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableCell colSpan={columns.length} className="px-2 py-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-px flex-1 bg-border" />
+                          <span className="text-xs text-muted-foreground">
+                            {tier ?? "Untiered"}
+                          </span>
+                          <div className="h-px flex-1 bg-border" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  <TableRow
+                    data-state={row.getIsSelected() ? "selected" : undefined}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
                   </TableRow>
-                )}
-                <TableRow
-                  data-state={row.getIsSelected() ? "selected" : undefined}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </Fragment>
-            )
-          })}
-        </TableBody>
-      </Table>
+                </Fragment>
+              )
+            })}
+          </TableBody>
+        </Table>
+      )}
     </div>
   )
 }
