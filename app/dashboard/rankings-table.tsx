@@ -206,12 +206,11 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
           ? PK_POS
           : [activePosition]
 
+    const sortKey = activePosition === "FLEX" ? "overallRank" : "positionalRank"
+
     return [...players]
       .filter((p) => p.pos != null && allowed.includes(p.pos))
-      .sort(
-        (a, b) =>
-          (a.positionalRank ?? Infinity) - (b.positionalRank ?? Infinity)
-      )
+      .sort((a, b) => (a[sortKey] ?? Infinity) - (b[sortKey] ?? Infinity))
   }, [players, activePosition])
 
   const maxUpside = useMemo(
