@@ -10,7 +10,9 @@ type RankedPlayer = {
   overallTier: string | null
   positionalTier: string | null
   overallRank: number | null
+  espnOverallRank: number | null
   positionalRank: number | null
+  espnPositionalRank: number | null
   pos: string | null
   projPoints: number | null
   projGames: number | null
@@ -38,6 +40,45 @@ function posColor(pos: string | null): string {
     default:
       return "bg-muted text-muted-foreground border-border"
   }
+}
+
+function parseSalary(val: string | null): number | null {
+  if (!val) return null
+  const n = parseFloat(val.replace(/[^0-9.]/g, ""))
+  return isNaN(n) ? null : n
+}
+
+function DeltaKV({
+  label,
+  delta,
+  prefix = "",
+  invert = false,
+}: {
+  label: string
+  delta: number | null
+  prefix?: string
+  invert?: boolean
+}) {
+  const color =
+    delta == null || delta === 0
+      ? "text-muted-foreground"
+      : delta > 0 !== invert
+        ? "text-green-400"
+        : "text-red-400"
+  return (
+    <KV
+      label={label}
+      value={
+        delta != null ? (
+          <span className={color}>
+            {delta > 0
+              ? `+${prefix}${delta.toFixed(0)}`
+              : `${prefix}${delta.toFixed(0)}`}
+          </span>
+        ) : null
+      }
+    />
+  )
 }
 
 function KV({ label, value }: { label: string; value: React.ReactNode }) {
@@ -149,11 +190,19 @@ export function PlayerDetail({
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-col items-center justify-center rounded-sm border border-muted-foreground p-1">
-          <p className="text-xl leading-none font-bold tabular-nums">
-            {player.overallRank ?? "—"}
-          </p>
-          <p className="text-[10px] text-muted-foreground">overall</p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex flex-col items-center justify-center rounded-sm border border-muted-foreground p-1">
+            <p className="text-xl leading-none font-bold tabular-nums">
+              {player.overallRank ?? "—"}
+            </p>
+            <p className="text-[10px] text-muted-foreground">FBG</p>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-sm border border-muted-foreground p-1">
+            <p className="text-xl leading-none font-bold tabular-nums">
+              {player.espnOverallRank ?? "—"}
+            </p>
+            <p className="text-[10px] text-muted-foreground">ESPN</p>
+          </div>
         </div>
       </div>
 
@@ -162,11 +211,71 @@ export function PlayerDetail({
       {/* Salary */}
       <div>
         <SectionLabel>Salary Cap</SectionLabel>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <KV label="FBG $250k" value={player.scFbg250} />
-          <KV label="FBG $200k" value={player.scFbg200} />
-          <KV label="FBG Scaled" value={player.scFbgScaled} />
-          <KV label="ESPN $200k" value={player.scEspn200} />
+        {(() => {
+          const fbg250 = parseSalary(player.scFbg250)
+          const fbg200 = parseSalary(player.scFbg200)
+          const espn = parseSalary(player.scEspn200)
+          const fbgAvg =
+            fbg250 != null && fbg200 != null
+              ? (fbg250 + fbg200) / 2
+              : (fbg250 ?? fbg200)
+          const delta = espn != null && fbgAvg != null ? espn - fbgAvg : null
+          const fbgRange =
+            player.scFbg250 != null && player.scFbg200 != null
+              ? `${player.scFbg250} – ${player.scFbg200}`
+              : (player.scFbg250 ?? player.scFbg200)
+          return (
+            <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+              <KV label="Range" value={fbgRange} />
+              <KV label="ESPN" value={player.scEspn200} />
+              <DeltaKV label="Δ Salary" delta={delta} prefix="$" invert />
+            </div>
+          )
+        })()}
+      </div>
+
+      <div className="h-px bg-border/50" />
+
+      {/* Rankings */}
+      <div>
+        <SectionLabel>Rankings</SectionLabel>
+        <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+          <KV label="FBG" value={player.overallRank} />
+          <KV label="ESPN" value={player.espnOverallRank} />
+          <DeltaKV
+            label="Δ"
+            delta={
+              player.espnOverallRank != null && player.overallRank != null
+                ? player.espnOverallRank - player.overallRank
+                : null
+            }
+          />
+          <KV
+            label="FBG Pos"
+            value={
+              player.positionalRank != null
+                ? `${player.pos ?? ""}${player.positionalRank}`
+                : null
+            }
+          />
+          <KV
+            label="ESPN Pos"
+            value={
+              player.espnPositionalRank != null
+                ? `${player.pos ?? ""}${player.espnPositionalRank}`
+                : null
+            }
+          />
+          <DeltaKV
+            label="Δ"
+            delta={
+              player.espnPositionalRank != null && player.positionalRank != null
+                ? player.espnPositionalRank - player.positionalRank
+                : null
+            }
+          />
+          <KV label="Overall Tier" value={player.overallTier} />
+          <KV label="Pos Tier" value={player.positionalTier} />
         </div>
       </div>
 
@@ -208,26 +317,6 @@ export function PlayerDetail({
         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
           <KV label="Proj Points" value={player.projPoints?.toFixed(1)} />
           <KV label="Proj Games" value={player.projGames?.toFixed(1)} />
-        </div>
-      </div>
-
-      <div className="h-px bg-border/50" />
-
-      {/* Rankings */}
-      <div>
-        <SectionLabel>Rankings</SectionLabel>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <KV label="Overall Rank" value={player.overallRank} />
-          <KV label="Overall Tier" value={player.overallTier} />
-          <KV
-            label="Pos Rank"
-            value={
-              player.positionalRank != null
-                ? `${player.pos ?? ""}${player.positionalRank}`
-                : null
-            }
-          />
-          <KV label="Pos Tier" value={player.positionalTier} />
         </div>
       </div>
     </div>
