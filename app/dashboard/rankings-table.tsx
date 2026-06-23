@@ -235,7 +235,7 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
   const rows = table.getRowModel().rows
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full flex-col gap-3">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-semibold">Player Rankings</h2>
         <span className="text-xs text-muted-foreground">
@@ -261,8 +261,9 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
         ))}
       </div>
 
+      <div className="min-h-0 flex-1 overflow-auto">
       <Table>
-        <TableHeader>
+        <TableHeader className="sticky top-0 z-10 bg-card">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -324,6 +325,7 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
           })}
         </TableBody>
       </Table>
+      </div>
     </div>
   )
 }

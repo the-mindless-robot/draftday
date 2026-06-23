@@ -28,14 +28,14 @@ export default async function Page() {
   })
 
   return (
-    <div className="[--header-height:calc(--spacing(14))]">
-      <SidebarProvider className="flex flex-col">
+    <div className="[--header-height:calc(--spacing(14))] h-dvh flex flex-col">
+      <SidebarProvider className="flex flex-col flex-1 overflow-hidden">
         <SiteHeader />
-        <div className="flex flex-1">
+        <div className="flex flex-1 overflow-hidden">
           <AppSidebar />
-          <SidebarInset>
-            <div className="flex flex-1 gap-4 p-4">
-              <div className="min-h-screen flex-1 rounded-xl bg-muted/50 p-4 md:min-h-min">
+          <SidebarInset className="overflow-hidden">
+            <div className="flex flex-1 gap-4 p-4 h-full overflow-hidden">
+              <div className="flex flex-1 flex-col rounded-xl bg-muted/50 p-4 overflow-hidden">
                 <RankingsTable players={players} />
               </div>
               <div className="grid auto-cols-min gap-4 md:grid-rows-3">
