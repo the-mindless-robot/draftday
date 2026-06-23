@@ -52,6 +52,8 @@ type RankedPlayer = {
   id: string
   name: string
   team: string | null
+  age: number | null
+  experience: number | null
   byeWeek: number | null
   overallTier: string | null
   positionalTier: string | null
@@ -64,6 +66,8 @@ type RankedPlayer = {
   downside: number | null
   scFbg250: string | null
   scFbg200: string | null
+  scFbgScaled: string | null
+  scEspn200: string | null
 }
 
 function parseSalary(val: string | null): number | null {
@@ -175,14 +179,14 @@ const columns: ColumnDef<RankedPlayer>[] = [
       return <span>{v != null ? v.toFixed(1) : "—"}</span>
     },
   },
-  {
-    accessorKey: "projGames",
-    header: () => <span>Games</span>,
-    cell: ({ getValue }) => {
-      const v = getValue() as number | null
-      return <span>{v != null ? v.toFixed(1) : "—"}</span>
-    },
-  },
+  // {
+  //   accessorKey: "projGames",
+  //   header: () => <span>Games</span>,
+  //   cell: ({ getValue }) => {
+  //     const v = getValue() as number | null
+  //     return <span>{v != null ? v.toFixed(1) : "—"}</span>
+  //   },
+  // },
   {
     accessorKey: "upside",
     header: ({ column }) => <SortableHeader column={column} label="Upside" />,
@@ -220,7 +224,15 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
 ]
 
-export function RankingsTable({ players }: { players: RankedPlayer[] }) {
+export function RankingsTable({
+  players,
+  selectedPlayerId,
+  onPlayerSelect,
+}: {
+  players: RankedPlayer[]
+  selectedPlayerId?: string
+  onPlayerSelect?: (player: RankedPlayer) => void
+}) {
   "use no memo"
   const [activePosition, setActivePosition] = useState<Position>("overall")
   const [sorting, setSorting] = useState<SortingState>([])
@@ -354,7 +366,13 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
                     </TableRow>
                   )}
                   <TableRow
-                    data-state={row.getIsSelected() ? "selected" : undefined}
+                    data-state={
+                      row.original.id === selectedPlayerId
+                        ? "selected"
+                        : undefined
+                    }
+                    className="cursor-pointer"
+                    onClick={() => onPlayerSelect?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

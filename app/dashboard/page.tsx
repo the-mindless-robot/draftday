@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import prisma from "@/lib/prisma"
 
-import { RankingsTable } from "./rankings-table"
+import { DashboardClient } from "./dashboard-client"
 
 export default async function Page() {
   const players = await prisma.player.findMany({
@@ -14,6 +14,8 @@ export default async function Page() {
       id: true,
       name: true,
       team: true,
+      age: true,
+      experience: true,
       byeWeek: true,
       overallTier: true,
       positionalTier: true,
@@ -26,6 +28,8 @@ export default async function Page() {
       downside: true,
       scFbg250: true,
       scFbg200: true,
+      scFbgScaled: true,
+      scEspn200: true,
     },
   })
 
@@ -36,16 +40,7 @@ export default async function Page() {
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar />
           <SidebarInset className="overflow-hidden">
-            <div className="flex flex-1 gap-4 p-4 h-full overflow-hidden">
-              <div className="flex flex-1 flex-col rounded-xl bg-muted/50 p-4 overflow-hidden">
-                <RankingsTable players={players} />
-              </div>
-              <div className="grid auto-cols-min gap-4 md:grid-rows-3">
-                <div className="aspect-video rounded-xl bg-muted/50" />
-                <div className="aspect-video rounded-xl bg-muted/50" />
-                <div className="aspect-video rounded-xl bg-muted/50" />
-              </div>
-            </div>
+            <DashboardClient players={players} />
           </SidebarInset>
         </div>
       </SidebarProvider>
