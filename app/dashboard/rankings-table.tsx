@@ -2,13 +2,14 @@
 
 import {
   type ColumnDef,
+  type RowData,
   type SortingState,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Fragment, useEffect, useState } from "react"
+import { Fragment, useEffect, useMemo, useState } from "react"
 
 import { SortableHeader } from "@/components/ui/data-table"
 import {
@@ -19,6 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+
+declare module "@tanstack/react-table" {
+  interface TableMeta<TData extends RowData> {
+    maxUpside: number
+    maxDownside: number
+  }
+}
 
 type RankedPlayer = {
   id: string
@@ -54,6 +62,29 @@ function posColor(pos: string | null): string {
   }
 }
 
+function ScaleBar({
+  value,
+  max,
+  barColor,
+}: {
+  value: number
+  max: number
+  barColor: string
+}) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+        <div
+          className={`absolute top-0 left-0 h-full rounded-full ${barColor}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="tabular-nums">{value.toFixed(1)}</span>
+    </div>
+  )
+}
+
 const columns: ColumnDef<RankedPlayer>[] = [
   {
     accessorKey: "overallRank",
@@ -66,17 +97,16 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     accessorKey: "name",
-    header: ({ column }) => <span>Name</span>,
-    cell: (props) => (
+    header: () => <span>Name</span>,
+    cell: ({ row }) => (
       <span className="font-medium">
-        {props.row.original.name}{" "}
-        {props.row.original.team ? `(${props.row.original.team})` : ""}
+        {row.original.name} {row.original.team ? `(${row.original.team})` : ""}
       </span>
     ),
   },
   {
     accessorKey: "pos",
-    header: ({ column }) => <span>Pos</span>,
+    header: () => <span>Pos</span>,
     cell: ({ row }) => {
       const pos = row.original.pos
       const rank = row.original.positionalRank
@@ -88,11 +118,6 @@ const columns: ColumnDef<RankedPlayer>[] = [
       )
     },
   },
-  // {
-  //   accessorKey: "team",
-  //   header: ({ column }) => <span>Team</span>,
-  //   cell: ({ getValue }) => <span>{(getValue() as string | null) ?? "—"}</span>,
-  // },
   {
     accessorKey: "projPoints",
     header: ({ column }) => <SortableHeader column={column} label="Proj Pts" />,
@@ -103,7 +128,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     accessorKey: "projGames",
-    header: ({ column }) => <span>Games</span>,
+    header: () => <span>Games</span>,
     cell: ({ getValue }) => {
       const v = getValue() as number | null
       return <span>{v != null ? v.toFixed(1) : "—"}</span>
@@ -111,27 +136,37 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     accessorKey: "upside",
-    header: ({ column }) => <span>Upside</span>,
-    cell: ({ getValue }) => {
+    header: () => <span>Upside</span>,
+    cell: ({ getValue, table }) => {
       const v = getValue() as number | null
+      if (v == null) return <span className="text-muted-foreground">—</span>
       return (
-        <span className="text-green-400">{v != null ? v.toFixed(1) : "—"}</span>
+        <ScaleBar
+          value={v}
+          max={table.options.meta?.maxUpside ?? 1}
+          barColor="bg-green-400"
+        />
       )
     },
   },
   {
     accessorKey: "downside",
-    header: ({ column }) => <span>Downside</span>,
-    cell: ({ getValue }) => {
+    header: () => <span>Downside</span>,
+    cell: ({ getValue, table }) => {
       const v = getValue() as number | null
+      if (v == null) return <span className="text-muted-foreground">—</span>
       return (
-        <span className="text-red-400">{v != null ? v.toFixed(1) : "—"}</span>
+        <ScaleBar
+          value={v}
+          max={table.options.meta?.maxDownside ?? 1}
+          barColor="bg-red-400"
+        />
       )
     },
   },
   {
     accessorKey: "byeWeek",
-    header: ({ column }) => <span>Bye</span>,
+    header: () => <span>Bye</span>,
     cell: ({ getValue }) => <span>{(getValue() as number | null) ?? "—"}</span>,
   },
 ]
@@ -158,9 +193,19 @@ export function RankingsTable() {
     fetchRankings()
   }, [])
 
+  const maxUpside = useMemo(
+    () => Math.max(...data.map((p) => p.upside ?? 0), 1),
+    [data]
+  )
+  const maxDownside = useMemo(
+    () => Math.max(...data.map((p) => p.downside ?? 0), 1),
+    [data]
+  )
+
   const table = useReactTable({
     data,
     columns,
+    meta: { maxUpside, maxDownside },
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
