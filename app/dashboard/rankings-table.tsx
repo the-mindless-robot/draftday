@@ -62,6 +62,23 @@ type RankedPlayer = {
   projGames: number | null
   upside: number | null
   downside: number | null
+  scFbg250: string | null
+  scFbg200: string | null
+}
+
+function parseSalary(val: string | null): number | null {
+  if (!val) return null
+  const n = parseFloat(val.replace(/[^0-9.]/g, ""))
+  return isNaN(n) ? null : n
+}
+
+function avgSalary(a: string | null, b: string | null): number | null {
+  const va = parseSalary(a)
+  const vb = parseSalary(b)
+  if (va == null && vb == null) return null
+  if (va == null) return vb
+  if (vb == null) return va
+  return (va + vb) / 2
 }
 
 function posColor(pos: string | null): string {
@@ -129,6 +146,15 @@ const columns: ColumnDef<RankedPlayer>[] = [
           {label}
         </span>
       )
+    },
+  },
+  {
+    id: "salary",
+    header: ({ column }) => <SortableHeader column={column} label="Salary" />,
+    accessorFn: (row) => avgSalary(row.scFbg250, row.scFbg200),
+    cell: ({ getValue }) => {
+      const v = getValue() as number | null
+      return <span>{v != null ? `$${v.toFixed(0)}` : "—"}</span>
     },
   },
   {
@@ -270,7 +296,7 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
           ))}
         </div>
         <div className="relative ml-auto w-48">
-          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
@@ -281,69 +307,69 @@ export function RankingsTable({ players }: { players: RankedPlayer[] }) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
-      <Table>
-        <TableHeader className="sticky top-0 z-10 bg-card">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {rows.map((row, i) => {
-            const tier =
-              activePosition === "overall"
-                ? row.original.overallTier
-                : row.original.positionalTier
-            const prevTier =
-              i > 0
-                ? activePosition === "overall"
-                  ? rows[i - 1].original.overallTier
-                  : rows[i - 1].original.positionalTier
-                : tier
-            const showDivider = i > 0 && tier !== prevTier
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-card">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {rows.map((row, i) => {
+              const tier =
+                activePosition === "overall"
+                  ? row.original.overallTier
+                  : row.original.positionalTier
+              const prevTier =
+                i > 0
+                  ? activePosition === "overall"
+                    ? rows[i - 1].original.overallTier
+                    : rows[i - 1].original.positionalTier
+                  : tier
+              const showDivider = i > 0 && tier !== prevTier
 
-            return (
-              <Fragment key={row.id}>
-                {showDivider && (
-                  <TableRow className="border-none hover:bg-transparent">
-                    <TableCell colSpan={columns.length} className="px-2 py-1">
-                      <div className="flex items-center gap-2">
-                        <div className="h-px flex-1 bg-border" />
-                        <span className="text-xs text-muted-foreground">
-                          {tier ?? "Untiered"}
-                        </span>
-                        <div className="h-px flex-1 bg-border" />
-                      </div>
-                    </TableCell>
+              return (
+                <Fragment key={row.id}>
+                  {showDivider && (
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableCell colSpan={columns.length} className="px-2 py-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-px flex-1 bg-border" />
+                          <span className="text-xs text-muted-foreground">
+                            {tier ?? "Untiered"}
+                          </span>
+                          <div className="h-px flex-1 bg-border" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  <TableRow
+                    data-state={row.getIsSelected() ? "selected" : undefined}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
                   </TableRow>
-                )}
-                <TableRow
-                  data-state={row.getIsSelected() ? "selected" : undefined}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </Fragment>
-            )
-          })}
-        </TableBody>
-      </Table>
+                </Fragment>
+              )
+            })}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

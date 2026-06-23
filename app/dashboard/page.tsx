@@ -24,6 +24,8 @@ export default async function Page() {
       projGames: true,
       upside: true,
       downside: true,
+      scFbg250: true,
+      scFbg200: true,
     },
   })
 
