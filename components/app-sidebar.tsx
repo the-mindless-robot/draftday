@@ -15,12 +15,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { TerminalSquareIcon, BotIcon, TerminalIcon, DatabaseIcon } from "lucide-react"
+import {
+  TerminalSquareIcon,
+  BotIcon,
+  TerminalIcon,
+  DatabaseIcon,
+} from "lucide-react"
 const data = {
   navMain: [
     {
       title: "Draflist",
-      url: "#",
+      url: "/dashboard",
       icon: <TerminalSquareIcon />,
       isActive: true,
       items: [
@@ -40,7 +45,7 @@ const data = {
     },
     {
       title: "Teams",
-      url: "#",
+      url: "/teams",
       icon: <BotIcon />,
       items: [],
     },
