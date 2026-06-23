@@ -1,47 +1,35 @@
-import * as cheerio from "cheerio"
+import { PDFParse } from "pdf-parse"
 
-export function parseESPN(html: string): Record<string, string>[] {
-  const $ = cheerio.load(html)
+const entryRegex =
+  /(\d{1,3})\.\s*\(([A-Z]+)(\d+)\)\s+(.+?),\s+([A-Z]{2,3}|FA)\s+\$(\d+)/g
 
-  // ESPN typically renders player tables inside .Table__TBODY or similar
-  // Fall back to the most column-rich table if ESPN-specific selectors miss
-  let bestTable = $("table").first()
-  let maxCols = 0
+export async function parseESPN(buffer: Uint8Array) {
+  const parser = new PDFParse(buffer)
+  const data = await parser.getText()
 
-  $("table").each((_, el) => {
-    const cols = $(el).find("thead th, thead td").length
-    if (cols > maxCols) {
-      maxCols = cols
-      bestTable = $(el)
+  const rankingsByRank = new Map()
+  let match
+
+  while ((match = entryRegex.exec(data.text)) !== null) {
+    const [_fullMatch, rank, position, positionalRank, name, team, salary] =
+      match
+
+    const rankNum = Number(rank)
+
+    // Avoid duplicate footer/example rows.
+    if (rankingsByRank.has(rankNum)) {
+      continue
     }
-  })
 
-  const headers: string[] = []
-  bestTable.find("thead tr").first().find("th, td").each((_, cell) => {
-    const text = $(cell).text().trim()
-    headers.push(text || `col_${headers.length}`)
-  })
-
-  if (headers.length === 0) {
-    bestTable.find("tr").first().find("th, td").each((_, cell) => {
-      const text = $(cell).text().trim()
-      headers.push(text || `col_${headers.length}`)
+    rankingsByRank.set(rankNum, {
+      rank: rankNum,
+      positional_rank: Number(positionalRank),
+      name: name.replace(/\s+/g, " ").trim(),
+      position,
+      team,
+      salary: Number(salary),
     })
   }
 
-  const rows: Record<string, string>[] = []
-
-  bestTable.find("tbody tr").each((_, tr) => {
-    const cells = $(tr).find("td")
-    if (cells.length === 0) return
-
-    const row: Record<string, string> = {}
-    cells.each((i, td) => {
-      const key = headers[i] ?? `col_${i}`
-      row[key] = $(td).text().trim()
-    })
-    rows.push(row)
-  })
-
-  return rows
+  return [...rankingsByRank.values()].sort((a, b) => a.rank - b.rank)
 }

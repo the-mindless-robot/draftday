@@ -76,18 +76,21 @@ model Player {
   positionalTier String? @map("positional_tier")
 
   // Rankings — stamped on overall import (no history)
-  pos            String?
-  overallRank    Int?    @map("overall_rank")
-  positionalRank Int?    @map("positional_rank")
-  projPoints     Float?  @map("proj_points")
-  projGames      Float?  @map("proj_games")
-  upside         Float?
-  downside       Float?
+  pos                String?
+  overallRank        Int?    @map("overall_rank")
+  positionalRank     Int?    @map("positional_rank")
+  espnOverallRank    Int?    @map("espn_overall_rank")
+  espnPositionalRank Int?    @map("espn_positional_rank")
+  projPoints         Float?  @map("proj_points")
+  projGames          Float?  @map("proj_games")
+  upside             Float?
+  downside           Float?
 
   // Salary cap — stamped on import (no history)
   scFbg250    String? @map("salary_cap_fbg_250")
   scFbg200    String? @map("salary_cap_fbg_200")
   scFbgScaled String? @map("salary_cap_fbg_scaled")
+  scEspn250   String? @map("salary_cap_espn_250")
   scEspn200   String? @map("salary_cap_espn_200")
 
   createdAt DateTime @default(now()) @map("created_at")

@@ -3,6 +3,36 @@ import { parseFBG, type FBGPosition } from "@/lib/parsers/fbg"
 import { parseESPN } from "@/lib/parsers/espn"
 
 export async function POST(req: NextRequest) {
+  const contentType = req.headers.get("content-type") ?? ""
+  const ROW_CAP = 300
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData()
+    const file = formData.get("file") as File | null
+
+    if (!file) {
+      return NextResponse.json({ error: "No file uploaded." }, { status: 400 })
+    }
+
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const allRows = await parseESPN(new Uint8Array(arrayBuffer))
+
+      if (allRows.length === 0) {
+        return NextResponse.json(
+          { error: "No rankings found in the PDF." },
+          { status: 422 }
+        )
+      }
+
+      const rows = allRows.slice(0, ROW_CAP)
+      return NextResponse.json({ rows, count: rows.length, totalFound: allRows.length })
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to parse PDF."
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
   const body = await req.json()
   const { url, html, type, position } = body as {
     url?: string
@@ -48,10 +78,8 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const ROW_CAP = 300
-
   try {
-    const allRows = type === "fbg" ? parseFBG(rawHtml, position ?? "overall") : parseESPN(rawHtml)
+    const allRows = parseFBG(rawHtml, position ?? "overall")
 
     if (allRows.length === 0) {
       return NextResponse.json(

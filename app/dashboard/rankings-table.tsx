@@ -154,11 +154,35 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     id: "salary",
-    header: ({ column }) => <SortableHeader column={column} label="Salary" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} label="AVG Salary" />
+    ),
     accessorFn: (row) => avgSalary(row.scFbg250, row.scFbg200),
     cell: ({ getValue }) => {
       const v = getValue() as number | null
       return <span>{v != null ? `$${v.toFixed(0)}` : "—"}</span>
+    },
+  },
+  {
+    id: "salary_range",
+    header: ({ column }) => <SortableHeader column={column} label="Range" />,
+    cell: ({ row }) => {
+      const hi = row.original.scFbg250 ?? null
+      const low = row.original.scFbg200 ?? null
+      const range = hi != null && low != null ? `${hi} - ${low}` : "—"
+      return <span>{range}</span>
+    },
+  },
+  {
+    id: "espn",
+    header: ({ column }) => <SortableHeader column={column} label="ESPN" />,
+
+    cell: ({ row }) => {
+      return (
+        <span>
+          {row.original.scEspn200 != null ? `$${row.original.scEspn200}` : "—"}
+        </span>
+      )
     },
   },
   {

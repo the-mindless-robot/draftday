@@ -87,6 +87,7 @@ export function ImportForm() {
   const [season, setSeason] = useState(2026)
   const [showHtml, setShowHtml] = useState(false)
   const [showJson, setShowJson] = useState(false)
+  const [espnFile, setEspnFile] = useState<File | null>(null)
 
   const [parsing, setParsing] = useState(false)
   const [result, setResult] = useState<ParsedResult | null>(null)
@@ -119,16 +120,23 @@ export function ImportForm() {
     setSaveError(null)
 
     try {
-      const res = await fetch("/api/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: url || undefined,
-          html: html || undefined,
-          type,
-          position: type === "fbg" ? position : undefined,
-        }),
-      })
+      let res: Response
+      if (type === "espn" && espnFile) {
+        const formData = new FormData()
+        formData.append("file", espnFile)
+        res = await fetch("/api/import", { method: "POST", body: formData })
+      } else {
+        res = await fetch("/api/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: url || undefined,
+            html: html || undefined,
+            type,
+            position: type === "fbg" ? position : undefined,
+          }),
+        })
+      }
       const data = await res.json()
       if (!res.ok) setParseError(data.error ?? "Something went wrong.")
       else setResult(data)
@@ -244,6 +252,25 @@ export function ImportForm() {
           </>
         )}
 
+        {/* ESPN-specific: PDF upload */}
+        {type === "espn" && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="espn-pdf" className="text-xs">
+              Rankings PDF
+            </Label>
+            <input
+              id="espn-pdf"
+              type="file"
+              accept=".pdf"
+              onChange={(e) => setEspnFile(e.target.files?.[0] ?? null)}
+              className="text-xs text-muted-foreground file:mr-3 file:border file:border-border file:bg-transparent file:px-2.5 file:py-1 file:text-xs file:text-foreground file:transition-colors hover:file:border-foreground/50"
+            />
+            <p className="text-xs text-muted-foreground">
+              Upload the ESPN auction values PDF.
+            </p>
+          </div>
+        )}
+
         {/* Season */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="season" className="text-xs">
@@ -258,51 +285,54 @@ export function ImportForm() {
           />
         </div>
 
-        {/* URL */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="url" className="text-xs">
-            Page URL
-          </Label>
-          <Input
-            id="url"
-            type="url"
-            placeholder="https://www.footballguys.com/..."
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            For login-protected pages, paste the HTML below instead.
-          </p>
-        </div>
+        {/* FBG: URL + HTML paste */}
+        {type === "fbg" && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="url" className="text-xs">
+                Page URL
+              </Label>
+              <Input
+                id="url"
+                type="url"
+                placeholder="https://www.footballguys.com/..."
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                For login-protected pages, paste the HTML below instead.
+              </p>
+            </div>
 
-        {/* HTML paste */}
-        <div className="flex flex-col gap-1.5">
-          <button
-            type="button"
-            onClick={() => setShowHtml((v) => !v)}
-            className="flex w-fit items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {showHtml ? (
-              <ChevronUpIcon className="size-3" />
-            ) : (
-              <ChevronDownIcon className="size-3" />
-            )}
-            {showHtml ? "Hide" : "Paste page HTML (for login-protected pages)"}
-          </button>
-          {showHtml && (
-            <textarea
-              placeholder="In Chrome: right-click → Inspect → right-click <html> → Copy → Copy outerHTML"
-              value={html}
-              onChange={(e) => setHtml(e.target.value)}
-              rows={8}
-              className="w-full resize-y rounded-none border border-input bg-transparent px-2.5 py-2 font-mono text-xs placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-input/30"
-            />
-          )}
-        </div>
+            <div className="flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowHtml((v) => !v)}
+                className="flex w-fit items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {showHtml ? (
+                  <ChevronUpIcon className="size-3" />
+                ) : (
+                  <ChevronDownIcon className="size-3" />
+                )}
+                {showHtml ? "Hide" : "Paste page HTML (for login-protected pages)"}
+              </button>
+              {showHtml && (
+                <textarea
+                  placeholder="In Chrome: right-click → Inspect → right-click <html> → Copy → Copy outerHTML"
+                  value={html}
+                  onChange={(e) => setHtml(e.target.value)}
+                  rows={8}
+                  className="w-full resize-y rounded-none border border-input bg-transparent px-2.5 py-2 font-mono text-xs placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-input/30"
+                />
+              )}
+            </div>
+          </>
+        )}
 
         <Button
           type="submit"
-          disabled={parsing || (!url && !html)}
+          disabled={parsing || (type === "espn" ? !espnFile : !url && !html)}
           className="w-fit"
         >
           {parsing && <Loader2Icon className="animate-spin" />}

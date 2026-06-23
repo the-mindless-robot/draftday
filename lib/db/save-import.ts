@@ -13,6 +13,10 @@ function toFloat(val: string | undefined): number | null {
   return isNaN(n) ? null : n
 }
 
+function stripNameSuffix(name: string): string {
+  return name.replace(/\s+(Jr\.?|Sr\.?|II|III|IV)$/i, "").trim()
+}
+
 function splitPos(val: string | undefined): { pos: string | null; positionalRank: number | null } {
   if (!val) return { pos: null, positionalRank: null }
   const match = val.match(/^([A-Za-z]+)(\d+)$/)
@@ -42,6 +46,80 @@ export async function saveImport({
       let saved = 0
 
       for (const row of rows) {
+        if (source === "espn") {
+          const espnPosMap: Record<string, string> = { DST: "TD", K: "PK" }
+          const pos = espnPosMap[String(row.position)] ?? String(row.position)
+
+          const espnTeamMap: Record<string, string> = { JAC: "JAX" }
+          const team = espnTeamMap[String(row.team)] ?? String(row.team)
+
+          const name = String(row.name).trim()
+
+          const buildWhere = (n: string) =>
+            pos === "TD"
+              ? {
+                  team: { equals: team, mode: "insensitive" as const },
+                  pos: { equals: pos, mode: "insensitive" as const },
+                }
+              : {
+                  name: { equals: n, mode: "insensitive" as const },
+                  team: { equals: team, mode: "insensitive" as const },
+                  pos: { equals: pos, mode: "insensitive" as const },
+                }
+
+          const buildWhereStartsWith = (n: string) => ({
+            name: { startsWith: n, mode: "insensitive" as const },
+            team: { equals: team, mode: "insensitive" as const },
+            pos: { equals: pos, mode: "insensitive" as const },
+          })
+
+          const player =
+            (await tx.player.findFirst({ where: buildWhere(name) })) ??
+            (pos !== "TD"
+              ? (await tx.player.findFirst({ where: buildWhere(stripNameSuffix(name)) })) ??
+                (await tx.player.findFirst({ where: buildWhereStartsWith(name) }))
+              : null)
+
+          if (!player) {
+            const stripped = stripNameSuffix(name)
+            const loose = await tx.player.findMany({
+              where: { name: { contains: stripped, mode: "insensitive" } },
+              select: { name: true, team: true, pos: true },
+            })
+            console.warn(
+              `[ESPN import] no match — tried: "${name}" / "${stripped}" @ ${team}/${pos}\n` +
+              `  DB candidates by name: ${loose.length ? JSON.stringify(loose) : "none"}`
+            )
+            continue
+          }
+
+          await tx.player.update({
+            where: { id: player.id },
+            data: {
+              espnOverallRank: Number(row.rank) || null,
+              espnPositionalRank: Number(row.positional_rank) || null,
+              scEspn200: String(row.salary) || null,
+            },
+          })
+
+          await tx.playerRanking.create({
+            data: {
+              playerId: player.id,
+              importId,
+              source,
+              position: "overall",
+              season,
+              importedAt,
+              overallRank: Number(row.rank) || null,
+              positionalRank: Number(row.positional_rank) || null,
+              pos,
+            },
+          })
+
+          saved++
+          continue
+        }
+
         if (!row.playerId) continue
 
         if (position === "overall") {
