@@ -90,7 +90,9 @@ function getSlotPlayers(
   budget: number,
   count = 3,
   exclude: Set<string> = new Set(),
-  sortFn?: (a: Player, b: Player) => number,
+  sortFn?: (budget: number) => (a: Player, b: Player) => number,
+  maxAbove = 15,
+  maxBelow = 20,
 ): Player[] {
   const posSet = new Set(positions.map((p) => p.toUpperCase()))
 
@@ -120,8 +122,9 @@ function getSlotPlayers(
       })
       .sort(sort)
 
-  let result = tryRange(budget * 0.65, budget * 1.5)
-  if (result.length < count) result = tryRange(budget * 0.35, budget * 2.5)
+  const lo = Math.max(0, budget - maxBelow)
+  const hi = budget + maxAbove
+  let result = tryRange(lo, hi)
   if (result.length >= count) return result.slice(0, count)
 
   // Final fallback: closest salary match
@@ -532,6 +535,8 @@ function PositionalComps({ label, players }: { label: string; players: Player[] 
 export function TemplatesClient({ players }: { players: Player[] }) {
   const [strategyId, setStrategyId] = useState(STRATEGIES[0].id)
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
+  const [maxAbove, setMaxAbove] = useState(15)
+  const [maxBelow, setMaxBelow] = useState(20)
 
   const strategy = STRATEGIES.find((s) => s.id === strategyId) ?? STRATEGIES[0]
   const totalBudgeted = Object.values(strategy.budgets).reduce((s, b) => s + b.budget, 0)
@@ -544,11 +549,11 @@ export function TemplatesClient({ players }: { players: Player[] }) {
   const slotPlayers = useMemo(() => {
     const used = new Set<string>()
     return strategy.slots.map((slot) => {
-      const result = getSlotPlayers(players, slot.positions, slot.budget, 3, used, strategy.slotSortFn)
+      const result = getSlotPlayers(players, slot.positions, slot.budget, 3, used, strategy.slotSortFn, maxAbove, maxBelow)
       result.forEach((p) => used.add(p.id))
       return result
     })
-  }, [players, strategy])
+  }, [players, strategy, maxAbove, maxBelow])
 
   const rosterPlayerIds = useMemo(
     () => new Set(slotPlayers.flat().map((p) => p.id)),
@@ -627,6 +632,40 @@ export function TemplatesClient({ players }: { players: Player[] }) {
             {Object.entries(strategy.budgets).map(([key, val]) => (
               <BudgetBar key={key} posKey={key} data={val} />
             ))}
+          </div>
+
+          <div className="rounded-xl bg-muted/50 p-4">
+            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase mb-2">
+              Salary Window
+            </p>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="flex items-center justify-between">
+                <span>Max above budget</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-mono">$</span>
+                  <input
+                    type="number"
+                    value={maxAbove}
+                    min={0}
+                    onChange={(e) => setMaxAbove(Math.max(0, Number(e.target.value)))}
+                    className="w-12 rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Max below budget</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-mono">$</span>
+                  <input
+                    type="number"
+                    value={maxBelow}
+                    min={0}
+                    onChange={(e) => setMaxBelow(Math.max(0, Number(e.target.value)))}
+                    className="w-12 rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-xl bg-muted/50 p-4">
