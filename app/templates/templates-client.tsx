@@ -31,11 +31,11 @@ type Player = {
 }
 
 type RosterSlot = {
-  label: string       // "QB", "RB", "WR", "TE", "FLEX", "TD", "PK", "BENCH"
-  budget: number      // per-slot dollar target
+  label: string // "QB", "RB", "WR", "TE", "FLEX", "TD", "PK", "BENCH"
+  budget: number // per-slot dollar target
   positions: string[] // eligible player positions
   isPriority?: boolean
-  note?: string       // e.g. "Stream", "→ RB", "Stud", "Handcuff"
+  note?: string // e.g. "Stream", "→ RB", "Stud", "Handcuff"
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -54,20 +54,65 @@ function fbgSalary(p: Player): number | null {
 }
 
 // Explicit class strings so Tailwind picks them all up at build time
-const POS_COLORS: Record<string, { text: string; bg: string; border: string }> = {
-  QB:    { text: "text-blue-400",         bg: "bg-blue-400",          border: "border-blue-400/30" },
-  RB:    { text: "text-green-400",        bg: "bg-green-400",         border: "border-green-400/30" },
-  WR:    { text: "text-yellow-400",       bg: "bg-yellow-400",        border: "border-yellow-400/30" },
-  TE:    { text: "text-orange-400",       bg: "bg-orange-400",        border: "border-orange-400/30" },
-  PK:    { text: "text-purple-400",       bg: "bg-purple-400",        border: "border-purple-400/30" },
-  K:     { text: "text-purple-400",       bg: "bg-purple-400",        border: "border-purple-400/30" },
-  TD:    { text: "text-sky-400",          bg: "bg-sky-400",           border: "border-sky-400/30" },
-  DST:   { text: "text-sky-400",          bg: "bg-sky-400",           border: "border-sky-400/30" },
-  FLEX:  { text: "text-indigo-400",       bg: "bg-indigo-400",        border: "border-indigo-400/30" },
-  BENCH: { text: "text-muted-foreground", bg: "bg-muted-foreground/30", border: "border-border" },
-  STARS: { text: "text-amber-400",        bg: "bg-amber-400",         border: "border-amber-400/30" },
-  REST:  { text: "text-muted-foreground", bg: "bg-muted-foreground/30", border: "border-border" },
-}
+const POS_COLORS: Record<string, { text: string; bg: string; border: string }> =
+  {
+    QB: {
+      text: "text-blue-400",
+      bg: "bg-blue-400",
+      border: "border-blue-400/30",
+    },
+    RB: {
+      text: "text-green-400",
+      bg: "bg-green-400",
+      border: "border-green-400/30",
+    },
+    WR: {
+      text: "text-yellow-400",
+      bg: "bg-yellow-400",
+      border: "border-yellow-400/30",
+    },
+    TE: {
+      text: "text-orange-400",
+      bg: "bg-orange-400",
+      border: "border-orange-400/30",
+    },
+    PK: {
+      text: "text-purple-400",
+      bg: "bg-purple-400",
+      border: "border-purple-400/30",
+    },
+    K: {
+      text: "text-purple-400",
+      bg: "bg-purple-400",
+      border: "border-purple-400/30",
+    },
+    TD: { text: "text-sky-400", bg: "bg-sky-400", border: "border-sky-400/30" },
+    DST: {
+      text: "text-sky-400",
+      bg: "bg-sky-400",
+      border: "border-sky-400/30",
+    },
+    FLEX: {
+      text: "text-indigo-400",
+      bg: "bg-indigo-400",
+      border: "border-indigo-400/30",
+    },
+    BENCH: {
+      text: "text-muted-foreground",
+      bg: "bg-muted-foreground/30",
+      border: "border-border",
+    },
+    STARS: {
+      text: "text-amber-400",
+      bg: "bg-amber-400",
+      border: "border-amber-400/30",
+    },
+    REST: {
+      text: "text-muted-foreground",
+      bg: "bg-muted-foreground/30",
+      border: "border-border",
+    },
+  }
 
 // ── Player Selection ──────────────────────────────────────────────────────────
 
@@ -92,7 +137,7 @@ function getSlotPlayers(
   exclude: Set<string> = new Set(),
   sortFn?: (budget: number) => (a: Player, b: Player) => number,
   maxAbove = 15,
-  maxBelow = 20,
+  maxBelow = 20
 ): Player[] {
   const posSet = new Set(positions.map((p) => p.toUpperCase()))
 
@@ -110,7 +155,8 @@ function getSlotPlayers(
 
   const defaultRankOf = (p: Player) =>
     positions.length === 1 ? (p.positionalRank ?? 999) : (p.overallRank ?? 999)
-  const defaultSort = (a: Player, b: Player) => defaultRankOf(a) - defaultRankOf(b)
+  const defaultSort = (a: Player, b: Player) =>
+    defaultRankOf(a) - defaultRankOf(b)
   const sort = sortFn ? sortFn(budget) : defaultSort
 
   // Salary window: [0.65×, 1.5×] of slot budget — shows players in this price tier
@@ -124,7 +170,7 @@ function getSlotPlayers(
 
   const lo = Math.max(0, budget - maxBelow)
   const hi = budget + maxAbove
-  let result = tryRange(lo, hi)
+  const result = tryRange(lo, hi)
   if (result.length >= count) return result.slice(0, count)
 
   // Final fallback: closest salary match
@@ -132,7 +178,9 @@ function getSlotPlayers(
   const rest = [...eligible]
     .filter((p) => !seen.has(p.id))
     .sort((a, b) => {
-      const diff = Math.abs((fbgSalary(a) ?? 0) - budget) - Math.abs((fbgSalary(b) ?? 0) - budget)
+      const diff =
+        Math.abs((fbgSalary(a) ?? 0) - budget) -
+        Math.abs((fbgSalary(b) ?? 0) - budget)
       return diff !== 0 ? diff : sort(a, b)
     })
 
@@ -151,10 +199,10 @@ type StrategyDef = {
   tagline: string
   philosophy: string
   accentClass: string
-  budgets: Record<string, SlotBudget>              // for left panel bars
+  budgets: Record<string, SlotBudget> // for left panel bars
   priorityPositions: string[]
-  slots: RosterSlot[]                              // 16-slot roster for right panel
-  slotSortFn?: (budget: number) => (a: Player, b: Player) => number  // factory: receives slot budget, returns sort fn
+  slots: RosterSlot[] // 16-slot roster for right panel
+  slotSortFn?: (budget: number) => (a: Player, b: Player) => number // factory: receives slot budget, returns sort fn
 }
 
 const STRATEGIES: StrategyDef[] = [
@@ -168,31 +216,48 @@ const STRATEGIES: StrategyDef[] = [
     accentClass: "text-green-400",
     priorityPositions: ["RB"],
     budgets: {
-      RB:    { slots: 4, budget: 145, label: "2 RB + 2 FLEX" },
-      WR:    { slots: 2, budget: 45 },
-      TE:    { slots: 1, budget: 20 },
-      QB:    { slots: 1, budget: 10,  label: "Stream" },
-      TD:    { slots: 1, budget: 5 },
-      PK:    { slots: 1, budget: 1 },
-      BENCH: { slots: 6, budget: 24,  label: "Handcuffs" },
+      RB: { slots: 4, budget: 145, label: "2 RB + 2 FLEX" },
+      WR: { slots: 2, budget: 45 },
+      TE: { slots: 1, budget: 20 },
+      QB: { slots: 1, budget: 10, label: "Stream" },
+      TD: { slots: 1, budget: 5 },
+      PK: { slots: 1, budget: 1 },
+      BENCH: { slots: 6, budget: 24, label: "Handcuffs" },
     },
     slots: [
-      { label: "QB",    budget: 10, positions: ["QB"],              note: "Stream" },
-      { label: "RB",    budget: 65, positions: ["RB"],              isPriority: true },
-      { label: "RB",    budget: 50, positions: ["RB"],              isPriority: true },
-      { label: "WR",    budget: 25, positions: ["WR"] },
-      { label: "WR",    budget: 20, positions: ["WR"] },
-      { label: "TE",    budget: 20, positions: ["TE"] },
-      { label: "FLEX",  budget: 20, positions: ["RB"],              isPriority: true, note: "→ RB" },
-      { label: "FLEX",  budget: 10, positions: ["RB"],              isPriority: true, note: "→ RB" },
-      { label: "TD",    budget: 5,  positions: ["TD", "DST"] },
-      { label: "PK",    budget: 1,  positions: ["K", "PK"] },
-      { label: "BENCH", budget: 6,  positions: ["RB", "WR", "TE"], note: "Handcuff" },
-      { label: "BENCH", budget: 5,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 5,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 4,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 3,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 1,  positions: ["RB", "WR", "TE"] },
+      { label: "QB", budget: 10, positions: ["QB"], note: "Stream" },
+      { label: "RB", budget: 65, positions: ["RB"], isPriority: true },
+      { label: "RB", budget: 50, positions: ["RB"], isPriority: true },
+      { label: "WR", budget: 25, positions: ["WR"] },
+      { label: "WR", budget: 20, positions: ["WR"] },
+      { label: "TE", budget: 20, positions: ["TE"] },
+      {
+        label: "FLEX",
+        budget: 20,
+        positions: ["RB"],
+        isPriority: true,
+        note: "→ RB",
+      },
+      {
+        label: "FLEX",
+        budget: 10,
+        positions: ["RB"],
+        isPriority: true,
+        note: "→ RB",
+      },
+      { label: "TD", budget: 5, positions: ["TD", "DST"] },
+      { label: "PK", budget: 1, positions: ["K", "PK"] },
+      {
+        label: "BENCH",
+        budget: 6,
+        positions: ["RB", "WR", "TE"],
+        note: "Handcuff",
+      },
+      { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 3, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
     ],
   },
 
@@ -206,31 +271,49 @@ const STRATEGIES: StrategyDef[] = [
     accentClass: "text-yellow-400",
     priorityPositions: ["WR", "QB"],
     budgets: {
-      WR:    { slots: 4, budget: 140, label: "2 WR + 2 FLEX" },
-      QB:    { slots: 1, budget: 30,  label: "Premium — stack with WRs" },
-      RB:    { slots: 2, budget: 30,  label: "Cheap committee backs" },
-      TE:    { slots: 1, budget: 10,  label: "Stream" },
-      TD:    { slots: 1, budget: 5 },
-      PK:    { slots: 1, budget: 1 },
+      WR: { slots: 4, budget: 140, label: "2 WR + 2 FLEX" },
+      QB: { slots: 1, budget: 30, label: "Premium — stack with WRs" },
+      RB: { slots: 2, budget: 30, label: "Cheap committee backs" },
+      TE: { slots: 1, budget: 10, label: "Stream" },
+      TD: { slots: 1, budget: 5 },
+      PK: { slots: 1, budget: 1 },
       BENCH: { slots: 6, budget: 34 },
     },
     slots: [
-      { label: "QB",    budget: 30, positions: ["QB"],              isPriority: true, note: "Stack w/ WRs" },
-      { label: "RB",    budget: 18, positions: ["RB"],              note: "Committee" },
-      { label: "RB",    budget: 12, positions: ["RB"],              note: "Committee" },
-      { label: "WR",    budget: 55, positions: ["WR"],              isPriority: true },
-      { label: "WR",    budget: 45, positions: ["WR"],              isPriority: true },
-      { label: "TE",    budget: 10, positions: ["TE"],              note: "Stream" },
-      { label: "FLEX",  budget: 25, positions: ["WR"],              isPriority: true, note: "→ WR" },
-      { label: "FLEX",  budget: 15, positions: ["WR"],              isPriority: true, note: "→ WR" },
-      { label: "TD",    budget: 5,  positions: ["TD", "DST"] },
-      { label: "PK",    budget: 1,  positions: ["K", "PK"] },
-      { label: "BENCH", budget: 7,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 7,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 6,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 6,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 5,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 3,  positions: ["RB", "WR", "TE"] },
+      {
+        label: "QB",
+        budget: 30,
+        positions: ["QB"],
+        isPriority: true,
+        note: "Stack w/ WRs",
+      },
+      { label: "RB", budget: 18, positions: ["RB"], note: "Committee" },
+      { label: "RB", budget: 12, positions: ["RB"], note: "Committee" },
+      { label: "WR", budget: 55, positions: ["WR"], isPriority: true },
+      { label: "WR", budget: 45, positions: ["WR"], isPriority: true },
+      { label: "TE", budget: 10, positions: ["TE"], note: "Stream" },
+      {
+        label: "FLEX",
+        budget: 25,
+        positions: ["WR"],
+        isPriority: true,
+        note: "→ WR",
+      },
+      {
+        label: "FLEX",
+        budget: 15,
+        positions: ["WR"],
+        isPriority: true,
+        note: "→ WR",
+      },
+      { label: "TD", budget: 5, positions: ["TD", "DST"] },
+      { label: "PK", budget: 1, positions: ["K", "PK"] },
+      { label: "BENCH", budget: 7, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 7, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 3, positions: ["RB", "WR", "TE"] },
     ],
   },
 
@@ -244,26 +327,59 @@ const STRATEGIES: StrategyDef[] = [
     accentClass: "text-purple-400",
     priorityPositions: ["RB", "WR", "TE"],
     budgets: {
-      STARS: { slots: 3,  budget: 175, label: "Any pos — overall rank 1–20" },
-      REST:  { slots: 13, budget: 75,  label: "Fill all remaining slots" },
+      STARS: { slots: 3, budget: 175, label: "Any pos — overall rank 1–20" },
+      REST: { slots: 13, budget: 75, label: "Fill all remaining slots" },
     },
     slots: [
-      { label: "QB",    budget: 8,  positions: ["QB"],              note: "Stream" },
-      { label: "RB",    budget: 75, positions: ["RB"],              isPriority: true, note: "Stud" },
-      { label: "RB",    budget: 6,  positions: ["RB"],              note: "Min" },
-      { label: "WR",    budget: 65, positions: ["WR"],              isPriority: true, note: "Stud" },
-      { label: "WR",    budget: 6,  positions: ["WR"],              note: "Min" },
-      { label: "TE",    budget: 35, positions: ["TE"],              isPriority: true, note: "Stud" },
-      { label: "FLEX",  budget: 5,  positions: ["RB", "WR", "TE"], note: "Min" },
-      { label: "FLEX",  budget: 5,  positions: ["RB", "WR", "TE"], note: "Min" },
-      { label: "TD",    budget: 4,  positions: ["TD", "DST"] },
-      { label: "PK",    budget: 1,  positions: ["K", "PK"] },
-      { label: "BENCH", budget: 8,  positions: ["RB", "WR", "TE"], note: "Upside" },
-      { label: "BENCH", budget: 8,  positions: ["RB", "WR", "TE"], note: "Upside" },
-      { label: "BENCH", budget: 7,  positions: ["RB", "WR", "TE"], note: "Upside" },
-      { label: "BENCH", budget: 7,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 6,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 4,  positions: ["RB", "WR", "TE"] },
+      { label: "QB", budget: 8, positions: ["QB"], note: "Stream" },
+      {
+        label: "RB",
+        budget: 75,
+        positions: ["RB"],
+        isPriority: true,
+        note: "Stud",
+      },
+      { label: "RB", budget: 6, positions: ["RB"], note: "Min" },
+      {
+        label: "WR",
+        budget: 65,
+        positions: ["WR"],
+        isPriority: true,
+        note: "Stud",
+      },
+      { label: "WR", budget: 6, positions: ["WR"], note: "Min" },
+      {
+        label: "TE",
+        budget: 35,
+        positions: ["TE"],
+        isPriority: true,
+        note: "Stud",
+      },
+      { label: "FLEX", budget: 5, positions: ["RB", "WR", "TE"], note: "Min" },
+      { label: "FLEX", budget: 5, positions: ["RB", "WR", "TE"], note: "Min" },
+      { label: "TD", budget: 4, positions: ["TD", "DST"] },
+      { label: "PK", budget: 1, positions: ["K", "PK"] },
+      {
+        label: "BENCH",
+        budget: 8,
+        positions: ["RB", "WR", "TE"],
+        note: "Upside",
+      },
+      {
+        label: "BENCH",
+        budget: 8,
+        positions: ["RB", "WR", "TE"],
+        note: "Upside",
+      },
+      {
+        label: "BENCH",
+        budget: 7,
+        positions: ["RB", "WR", "TE"],
+        note: "Upside",
+      },
+      { label: "BENCH", budget: 7, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
     ],
   },
 
@@ -277,31 +393,43 @@ const STRATEGIES: StrategyDef[] = [
     accentClass: "text-orange-400",
     priorityPositions: ["TE", "QB"],
     budgets: {
-      TE:    { slots: 1, budget: 65, label: "Elite TE1 only" },
-      QB:    { slots: 1, budget: 35, label: "Premium — stack with TE" },
-      RB:    { slots: 3, budget: 55, label: "2 RB + 1 FLEX" },
-      WR:    { slots: 3, budget: 55, label: "2 WR + 1 FLEX" },
-      TD:    { slots: 1, budget: 5 },
-      PK:    { slots: 1, budget: 1 },
+      TE: { slots: 1, budget: 65, label: "Elite TE1 only" },
+      QB: { slots: 1, budget: 35, label: "Premium — stack with TE" },
+      RB: { slots: 3, budget: 55, label: "2 RB + 1 FLEX" },
+      WR: { slots: 3, budget: 55, label: "2 WR + 1 FLEX" },
+      TD: { slots: 1, budget: 5 },
+      PK: { slots: 1, budget: 1 },
       BENCH: { slots: 6, budget: 34 },
     },
     slots: [
-      { label: "QB",    budget: 35, positions: ["QB"],              isPriority: true, note: "Stack w/ TE" },
-      { label: "RB",    budget: 25, positions: ["RB"] },
-      { label: "RB",    budget: 20, positions: ["RB"] },
-      { label: "WR",    budget: 25, positions: ["WR"] },
-      { label: "WR",    budget: 20, positions: ["WR"] },
-      { label: "TE",    budget: 65, positions: ["TE"],              isPriority: true, note: "Elite TE1" },
-      { label: "FLEX",  budget: 10, positions: ["RB"],              note: "→ RB" },
-      { label: "FLEX",  budget: 10, positions: ["WR"],              note: "→ WR" },
-      { label: "TD",    budget: 5,  positions: ["TD", "DST"] },
-      { label: "PK",    budget: 1,  positions: ["K", "PK"] },
-      { label: "BENCH", budget: 7,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 6,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 6,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 5,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 5,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 5,  positions: ["RB", "WR", "TE"] },
+      {
+        label: "QB",
+        budget: 35,
+        positions: ["QB"],
+        isPriority: true,
+        note: "Stack w/ TE",
+      },
+      { label: "RB", budget: 25, positions: ["RB"] },
+      { label: "RB", budget: 20, positions: ["RB"] },
+      { label: "WR", budget: 25, positions: ["WR"] },
+      { label: "WR", budget: 20, positions: ["WR"] },
+      {
+        label: "TE",
+        budget: 65,
+        positions: ["TE"],
+        isPriority: true,
+        note: "Elite TE1",
+      },
+      { label: "FLEX", budget: 10, positions: ["RB"], note: "→ RB" },
+      { label: "FLEX", budget: 10, positions: ["WR"], note: "→ WR" },
+      { label: "TD", budget: 5, positions: ["TD", "DST"] },
+      { label: "PK", budget: 1, positions: ["K", "PK"] },
+      { label: "BENCH", budget: 7, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
     ],
   },
 
@@ -326,35 +454,98 @@ const STRATEGIES: StrategyDef[] = [
       return valueScore(b) - valueScore(a)
     },
     budgets: {
-      QB:    { slots: 1, budget: 25 },
-      RB:    { slots: 2, budget: 68 },
-      WR:    { slots: 2, budget: 68 },
-      TE:    { slots: 1, budget: 32 },
-      FLEX:  { slots: 2, budget: 33, label: "Best value available" },
-      TD:    { slots: 1, budget: 5 },
-      PK:    { slots: 1, budget: 1 },
+      QB: { slots: 1, budget: 25 },
+      RB: { slots: 2, budget: 68 },
+      WR: { slots: 2, budget: 68 },
+      TE: { slots: 1, budget: 32 },
+      FLEX: { slots: 2, budget: 33, label: "Best value available" },
+      TD: { slots: 1, budget: 5 },
+      PK: { slots: 1, budget: 1 },
       BENCH: { slots: 6, budget: 18, label: "High upside" },
     },
     slots: [
-      { label: "QB",    budget: 25, positions: ["QB"] },
-      { label: "RB",    budget: 40, positions: ["RB"] },
-      { label: "RB",    budget: 28, positions: ["RB"] },
-      { label: "WR",    budget: 40, positions: ["WR"] },
-      { label: "WR",    budget: 28, positions: ["WR"] },
-      { label: "TE",    budget: 32, positions: ["TE"] },
-      { label: "FLEX",  budget: 20, positions: ["RB", "WR", "TE"], note: "Best value" },
-      { label: "FLEX",  budget: 13, positions: ["RB", "WR", "TE"], note: "Best value" },
-      { label: "TD",    budget: 5,  positions: ["TD", "DST"] },
-      { label: "PK",    budget: 1,  positions: ["K", "PK"] },
-      { label: "BENCH", budget: 5,  positions: ["RB", "WR", "TE"], note: "Sleeper" },
-      { label: "BENCH", budget: 4,  positions: ["RB", "WR", "TE"], note: "Sleeper" },
-      { label: "BENCH", budget: 4,  positions: ["RB", "WR", "TE"], note: "Sleeper" },
-      { label: "BENCH", budget: 3,  positions: ["RB", "WR", "TE"], note: "Sleeper" },
-      { label: "BENCH", budget: 1,  positions: ["RB", "WR", "TE"] },
-      { label: "BENCH", budget: 1,  positions: ["RB", "WR", "TE"] },
+      { label: "QB", budget: 25, positions: ["QB"] },
+      { label: "RB", budget: 40, positions: ["RB"] },
+      { label: "RB", budget: 28, positions: ["RB"] },
+      { label: "WR", budget: 40, positions: ["WR"] },
+      { label: "WR", budget: 28, positions: ["WR"] },
+      { label: "TE", budget: 32, positions: ["TE"] },
+      {
+        label: "FLEX",
+        budget: 20,
+        positions: ["RB", "WR", "TE"],
+        note: "Best value",
+      },
+      {
+        label: "FLEX",
+        budget: 13,
+        positions: ["RB", "WR", "TE"],
+        note: "Best value",
+      },
+      { label: "TD", budget: 5, positions: ["TD", "DST"] },
+      { label: "PK", budget: 1, positions: ["K", "PK"] },
+      {
+        label: "BENCH",
+        budget: 5,
+        positions: ["RB", "WR", "TE"],
+        note: "Sleeper",
+      },
+      {
+        label: "BENCH",
+        budget: 4,
+        positions: ["RB", "WR", "TE"],
+        note: "Sleeper",
+      },
+      {
+        label: "BENCH",
+        budget: 4,
+        positions: ["RB", "WR", "TE"],
+        note: "Sleeper",
+      },
+      {
+        label: "BENCH",
+        budget: 3,
+        positions: ["RB", "WR", "TE"],
+        note: "Sleeper",
+      },
+      { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
     ],
   },
 ]
+
+// ── Custom Template ───────────────────────────────────────────────────────────
+
+const CUSTOM_TEMPLATE_SLOTS: RosterSlot[] = [
+  { label: "QB", budget: 25, positions: ["QB"] },
+  { label: "RB", budget: 40, positions: ["RB"] },
+  { label: "RB", budget: 28, positions: ["RB"] },
+  { label: "WR", budget: 40, positions: ["WR"] },
+  { label: "WR", budget: 28, positions: ["WR"] },
+  { label: "TE", budget: 32, positions: ["TE"] },
+  { label: "FLEX", budget: 20, positions: ["RB", "WR", "TE"] },
+  { label: "FLEX", budget: 13, positions: ["RB", "WR", "TE"] },
+  { label: "TD", budget: 5, positions: ["TD", "DST"] },
+  { label: "PK", budget: 1, positions: ["K", "PK"] },
+  { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 3, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
+]
+
+const CUSTOM_STRATEGY: StrategyDef = {
+  id: "custom",
+  name: "Custom",
+  tagline: "Set your own slot budgets",
+  philosophy:
+    "Manually set each slot's dollar target to explore any allocation. Player options update live as you adjust values — start from a balanced base and shift budget toward your preferred positions.",
+  accentClass: "text-muted-foreground",
+  budgets: {},
+  priorityPositions: [],
+  slots: CUSTOM_TEMPLATE_SLOTS,
+}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -365,19 +556,29 @@ function BudgetBar({ posKey, data }: { posKey: string; data: SlotBudget }) {
   return (
     <div className="space-y-1">
       <div className="flex items-baseline justify-between gap-2">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span className={cn("text-xs font-mono font-bold w-12 shrink-0", colors.text)}>
+        <div className="flex min-w-0 items-baseline gap-2">
+          <span
+            className={cn(
+              "w-12 shrink-0 font-mono text-xs font-bold",
+              colors.text
+            )}
+          >
             {posKey}
           </span>
-          <span className="text-[10px] text-muted-foreground truncate">
+          <span className="truncate text-[10px] text-muted-foreground">
             {data.slots} slot{data.slots !== 1 ? "s" : ""}
             {data.label ? ` · ${data.label}` : ""}
           </span>
         </div>
-        <span className="text-xs font-mono text-muted-foreground shrink-0">${data.budget}</span>
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">
+          ${data.budget}
+        </span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-        <div className={cn("h-full rounded-full", colors.bg)} style={{ width: `${pct}%` }} />
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className={cn("h-full rounded-full", colors.bg)}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   )
@@ -395,46 +596,75 @@ function PlayerCard({
   const salary = fbgSalary(player)
   const espn = parseSalary(player.scEspn200)
   const delta = espn != null && salary != null ? espn - salary : null
-  const colors = POS_COLORS[player.pos ?? ""] ?? { text: "text-muted-foreground", border: "border-border" }
+  const colors = POS_COLORS[player.pos ?? ""] ?? {
+    text: "text-muted-foreground",
+    border: "border-border",
+  }
 
   return (
     <div
       onClick={() => onClick(player)}
       className={cn(
-        "flex-1 min-w-0 rounded border px-2 py-1.5 space-y-0.5 cursor-pointer transition-colors",
+        "min-w-0 flex-1 cursor-pointer space-y-0.5 rounded border px-2 py-1.5 transition-colors",
         isSelected
-          ? "bg-muted border-foreground/40 ring-1 ring-foreground/20"
-          : cn("bg-muted/30 hover:bg-muted/60", colors.border),
+          ? "border-foreground/40 bg-muted ring-1 ring-foreground/20"
+          : cn("bg-muted/30 hover:bg-muted/60", colors.border)
       )}
     >
       <div className="flex items-center justify-between gap-1">
-        <span className={cn("text-[10px] font-mono font-bold shrink-0", colors.text)}>
-          {player.pos}{player.positionalRank ?? ""}
+        <span
+          className={cn(
+            "shrink-0 font-mono text-[10px] font-bold",
+            colors.text
+          )}
+        >
+          {player.pos}
+          {player.positionalRank ?? ""}
         </span>
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="text-[10px] font-mono text-muted-foreground">
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="font-mono text-[10px] text-muted-foreground">
             {salary != null ? `$${salary.toFixed(0)}` : "—"}
           </span>
           {delta != null && (
-            <span className={cn(
-              "text-[9px] font-mono",
-              delta < 0 ? "text-green-400" : "text-red-400/60",
-            )}>
+            <span
+              className={cn(
+                "font-mono text-[9px]",
+                delta < 0 ? "text-green-400" : "text-red-400/60"
+              )}
+            >
               {delta > 0 ? `+${delta.toFixed(0)}` : `${delta.toFixed(0)}`}
             </span>
           )}
         </div>
       </div>
-      <p className="text-[11px] font-medium truncate leading-tight">{player.name}</p>
-      {player.team && (
-        <p className="text-[10px] text-muted-foreground leading-none">{player.team}</p>
-      )}
+      <p className="truncate text-[11px] leading-tight font-medium">
+        {player.name}
+      </p>
+      <div className="flex items-center justify-between">
+        {player.team && (
+          <p className="text-[10px] leading-none text-muted-foreground">
+            {player.team}
+          </p>
+        )}
+        {(player.positionalTier || player.overallTier) && (
+          <p className="font-mono text-[10px] leading-none text-muted-foreground/60">
+            {[
+              player.positionalTier ? `Pos${player.positionalTier}` : null,
+              player.overallTier ? `${player.overallTier}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
+      </div>
     </div>
   )
 }
 
 function EmptyCard() {
-  return <div className="flex-1 min-w-0 rounded border border-dashed border-border/30 bg-muted/10" />
+  return (
+    <div className="min-w-0 flex-1 rounded border border-dashed border-border/30 bg-muted/10" />
+  )
 }
 
 function SlotRow({
@@ -443,43 +673,68 @@ function SlotRow({
   accentClass,
   selectedPlayerId,
   onPlayerSelect,
+  onBudgetChange,
 }: {
   slot: RosterSlot
   players: Player[]
   accentClass: string
   selectedPlayerId: string | null
   onPlayerSelect: (p: Player) => void
+  onBudgetChange?: (v: number) => void
 }) {
   const colors = POS_COLORS[slot.label] ?? POS_COLORS.BENCH
 
   return (
-    <div className="flex items-stretch gap-3 px-3 py-2 border-b border-border/20 last:border-0">
+    <div className="flex items-stretch gap-3 border-b border-border/20 px-3 py-2 last:border-0">
       {/* Slot label */}
-      <div className="w-16 shrink-0 flex items-start gap-1 pt-1">
+      <div className="flex w-16 shrink-0 items-start gap-1 pt-1">
         <span
           className={cn(
-            "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border",
+            "rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold",
             colors.text,
-            colors.border,
+            colors.border
           )}
         >
           {slot.label}
         </span>
         {slot.isPriority && (
-          <span className={cn("text-[9px] leading-none mt-1 shrink-0", accentClass)}>★</span>
+          <span
+            className={cn("mt-1 shrink-0 text-[9px] leading-none", accentClass)}
+          >
+            ★
+          </span>
         )}
       </div>
 
       {/* Budget + note */}
-      <div className="w-20 shrink-0 flex flex-col justify-start pt-1 gap-0.5">
-        <span className="text-xs font-mono font-semibold">${slot.budget}</span>
+      <div className="flex w-20 shrink-0 flex-col justify-start gap-0.5 pt-1">
+        {onBudgetChange ? (
+          <div className="flex items-center gap-0.5">
+            <span className="font-mono text-xs text-muted-foreground">$</span>
+            <input
+              type="number"
+              value={slot.budget}
+              min={1}
+              onChange={(e) =>
+                onBudgetChange(Math.max(1, Number(e.target.value)))
+              }
+              className="w-12 [appearance:textfield] rounded border border-border bg-background px-1 py-0.5 text-right font-mono text-xs font-semibold text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+          </div>
+        ) : (
+          <span className="font-mono text-xs font-semibold">
+            ${slot.budget}
+          </span>
+        )}
         {slot.note && (
-          <span className="text-[10px] text-muted-foreground leading-tight">{slot.note}</span>
+          <span className="text-[10px] leading-tight text-muted-foreground">
+            {slot.note}
+          </span>
         )}
       </div>
 
       {/* 3 player cards */}
-      <div className="flex flex-1 gap-2 min-w-0">
+      <div className="flex min-w-0 flex-1 gap-2">
         {players.map((p) => (
           <PlayerCard
             key={p.id}
@@ -496,25 +751,41 @@ function SlotRow({
   )
 }
 
-function PositionalComps({ label, players }: { label: string; players: Player[] }) {
+function PositionalComps({
+  label,
+  players,
+}: {
+  label: string
+  players: Player[]
+}) {
   if (players.length === 0) return null
   return (
-    <div className="rounded-xl bg-muted/50 p-3 shrink-0">
+    <div className="shrink-0 rounded-xl bg-muted/50 p-3">
       <p className="mb-2 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
         {label}
       </p>
       <div className="flex flex-col gap-1.5">
         {players.map((p) => {
           const salary = fbgSalary(p)
-          const colors = POS_COLORS[p.pos ?? ""] ?? { text: "text-muted-foreground" }
+          const colors = POS_COLORS[p.pos ?? ""] ?? {
+            text: "text-muted-foreground",
+          }
           return (
             <div key={p.id} className="flex items-center gap-2 text-xs">
-              <span className={cn("w-10 shrink-0 font-mono font-semibold", colors.text)}>
-                {p.pos}{p.positionalRank ?? ""}
+              <span
+                className={cn(
+                  "w-10 shrink-0 font-mono font-semibold",
+                  colors.text
+                )}
+              >
+                {p.pos}
+                {p.positionalRank ?? ""}
               </span>
               <span className="min-w-0 flex-1 truncate font-medium">
                 {p.name}
-                {p.team ? <span className="text-muted-foreground"> {p.team}</span> : null}
+                {p.team ? (
+                  <span className="text-muted-foreground"> {p.team}</span>
+                ) : null}
               </span>
               <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
                 #{p.overallRank ?? "—"}
@@ -537,27 +808,75 @@ export function TemplatesClient({ players }: { players: Player[] }) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
   const [maxAbove, setMaxAbove] = useState(15)
   const [maxBelow, setMaxBelow] = useState(20)
+  const [customBudgets, setCustomBudgets] = useState<number[]>(() =>
+    CUSTOM_TEMPLATE_SLOTS.map((s) => s.budget)
+  )
 
-  const strategy = STRATEGIES.find((s) => s.id === strategyId) ?? STRATEGIES[0]
-  const totalBudgeted = Object.values(strategy.budgets).reduce((s, b) => s + b.budget, 0)
+  const isCustom = strategyId === "custom"
+  const strategy = isCustom
+    ? CUSTOM_STRATEGY
+    : (STRATEGIES.find((s) => s.id === strategyId) ?? STRATEGIES[0])
+
+  const activeSlots = isCustom
+    ? CUSTOM_TEMPLATE_SLOTS.map((slot, i) => ({
+        ...slot,
+        budget: customBudgets[i] ?? slot.budget,
+      }))
+    : strategy.slots
+
+  const displayBudgets: Record<string, SlotBudget> = isCustom
+    ? (() => {
+        const acc: Record<string, SlotBudget> = {}
+        activeSlots.forEach((slot) => {
+          if (!acc[slot.label]) acc[slot.label] = { slots: 0, budget: 0 }
+          acc[slot.label].slots++
+          acc[slot.label].budget += slot.budget
+        })
+        return acc
+      })()
+    : strategy.budgets
+
+  const totalBudgeted = Object.values(displayBudgets).reduce(
+    (s, b) => s + b.budget,
+    0
+  )
 
   const globalMax = useMemo(
-    () => Math.max(...players.map((p) => Math.max(p.upside ?? 0, p.downside ?? 0)), 1),
-    [players],
+    () =>
+      Math.max(
+        ...players.map((p) => Math.max(p.upside ?? 0, p.downside ?? 0)),
+        1
+      ),
+    [players]
   )
 
   const slotPlayers = useMemo(() => {
+    const slots = isCustom
+      ? CUSTOM_TEMPLATE_SLOTS.map((slot, i) => ({
+          ...slot,
+          budget: customBudgets[i] ?? slot.budget,
+        }))
+      : strategy.slots
     const used = new Set<string>()
-    return strategy.slots.map((slot) => {
-      const result = getSlotPlayers(players, slot.positions, slot.budget, 3, used, strategy.slotSortFn, maxAbove, maxBelow)
+    return slots.map((slot) => {
+      const result = getSlotPlayers(
+        players,
+        slot.positions,
+        slot.budget,
+        3,
+        used,
+        strategy.slotSortFn,
+        maxAbove,
+        maxBelow
+      )
       result.forEach((p) => used.add(p.id))
       return result
     })
-  }, [players, strategy, maxAbove, maxBelow])
+  }, [players, strategy, maxAbove, maxBelow, customBudgets, isCustom])
 
   const rosterPlayerIds = useMemo(
     () => new Set(slotPlayers.flat().map((p) => p.id)),
-    [slotPlayers],
+    [slotPlayers]
   )
 
   const positionalComps = useMemo(() => {
@@ -568,74 +887,99 @@ export function TemplatesClient({ players }: { players: Player[] }) {
         (p) =>
           p.id !== selectedPlayer.id &&
           !rosterPlayerIds.has(p.id) &&
-          p.pos === selectedPlayer.pos,
+          p.pos === selectedPlayer.pos
       )
       .sort(
         (a, b) =>
           Math.abs((a.overallRank ?? 999) - rank) -
-          Math.abs((b.overallRank ?? 999) - rank),
+          Math.abs((b.overallRank ?? 999) - rank)
       )
       .slice(0, 5)
   }, [selectedPlayer, players, rosterPlayerIds])
 
   return (
-    <div className="flex flex-col h-full overflow-hidden p-4 gap-4">
-
+    <div className="flex h-full flex-col gap-4 overflow-hidden p-4">
       {/* ── Strategy Selector ── */}
-      <div className="grid grid-cols-5 gap-3 shrink-0">
+      <div className="grid shrink-0 grid-cols-6 gap-3">
         {STRATEGIES.map((s) => (
           <button
             key={s.id}
             onClick={() => setStrategyId(s.id)}
             className={cn(
-              "rounded-xl p-3 text-left transition-colors border",
+              "rounded-xl border p-3 text-left transition-colors",
               s.id === strategyId
-                ? "bg-muted border-border"
-                : "bg-muted/30 border-transparent hover:bg-muted/50",
+                ? "border-border bg-muted"
+                : "border-transparent bg-muted/30 hover:bg-muted/50"
             )}
           >
             <p className={cn("text-xs font-bold", s.accentClass)}>{s.name}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{s.tagline}</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">
+              {s.tagline}
+            </p>
           </button>
         ))}
+        <button
+          onClick={() => setStrategyId("custom")}
+          className={cn(
+            "rounded-xl border p-3 text-left transition-colors",
+            isCustom
+              ? "border-border bg-muted"
+              : "border-dashed border-border/60 bg-muted/30 hover:bg-muted/50"
+          )}
+        >
+          <p className="text-xs font-bold text-foreground/70">Custom</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">
+            Set your own slot budgets
+          </p>
+        </button>
       </div>
 
       {/* ── Main Layout ── */}
-      <div className="flex flex-1 gap-4 overflow-hidden min-h-0">
-
+      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
         {/* Left Column — unchanged */}
-        <div className="w-72 shrink-0 flex flex-col gap-3 overflow-y-auto">
-
+        <div className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto">
           <div className="rounded-xl bg-muted/50 p-4">
-            <p className={cn("text-xs font-bold mb-1.5", strategy.accentClass)}>
+            <p className={cn("mb-1.5 text-xs font-bold", strategy.accentClass)}>
               {strategy.name}
             </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               {strategy.philosophy}
             </p>
           </div>
 
-          <div className="rounded-xl bg-muted/50 p-4 space-y-3">
+          <div className="space-y-3 rounded-xl bg-muted/50 p-4">
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
                 Budget Allocation
               </p>
               <span
                 className={cn(
-                  "text-xs font-mono font-semibold",
-                  totalBudgeted === TOTAL_BUDGET ? "text-green-400" : "text-yellow-400",
+                  "font-mono text-xs font-semibold",
+                  totalBudgeted === TOTAL_BUDGET
+                    ? "text-green-400"
+                    : "text-yellow-400"
                 )}
               >
                 ${totalBudgeted} / $250
               </span>
             </div>
-            {Object.entries(strategy.budgets).map(([key, val]) => (
+            {Object.entries(displayBudgets).map(([key, val]) => (
               <BudgetBar key={key} posKey={key} data={val} />
             ))}
+            {isCustom && (
+              <button
+                onClick={() =>
+                  setCustomBudgets(CUSTOM_TEMPLATE_SLOTS.map((s) => s.budget))
+                }
+                className="mt-1 text-left text-[10px] text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+              >
+                Reset to defaults
+              </button>
+            )}
           </div>
 
           <div className="rounded-xl bg-muted/50 p-4">
-            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase mb-2">
+            <p className="mb-2 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
               Salary Window
             </p>
             <div className="space-y-2 text-xs text-muted-foreground">
@@ -647,8 +991,10 @@ export function TemplatesClient({ players }: { players: Player[] }) {
                     type="number"
                     value={maxAbove}
                     min={0}
-                    onChange={(e) => setMaxAbove(Math.max(0, Number(e.target.value)))}
-                    className="w-12 rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    onChange={(e) =>
+                      setMaxAbove(Math.max(0, Number(e.target.value)))
+                    }
+                    className="w-12 [appearance:textfield] rounded border border-border bg-muted px-1.5 py-0.5 text-right font-mono text-xs text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </div>
               </div>
@@ -660,8 +1006,10 @@ export function TemplatesClient({ players }: { players: Player[] }) {
                     type="number"
                     value={maxBelow}
                     min={0}
-                    onChange={(e) => setMaxBelow(Math.max(0, Number(e.target.value)))}
-                    className="w-12 rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    onChange={(e) =>
+                      setMaxBelow(Math.max(0, Number(e.target.value)))
+                    }
+                    className="w-12 [appearance:textfield] rounded border border-border bg-muted px-1.5 py-0.5 text-right font-mono text-xs text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </div>
               </div>
@@ -669,7 +1017,7 @@ export function TemplatesClient({ players }: { players: Player[] }) {
           </div>
 
           <div className="rounded-xl bg-muted/50 p-4">
-            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase mb-2">
+            <p className="mb-2 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
               Cap Notes
             </p>
             <div className="space-y-1.5 text-xs text-muted-foreground">
@@ -689,7 +1037,11 @@ export function TemplatesClient({ players }: { players: Player[] }) {
                 <div className="flex justify-between">
                   <span>Avg bench slot</span>
                   <span className="font-mono text-foreground">
-                    ${(strategy.budgets.BENCH.budget / strategy.budgets.BENCH.slots).toFixed(0)}
+                    $
+                    {(
+                      strategy.budgets.BENCH.budget /
+                      strategy.budgets.BENCH.slots
+                    ).toFixed(0)}
                   </span>
                 </div>
               )}
@@ -698,21 +1050,20 @@ export function TemplatesClient({ players }: { players: Player[] }) {
         </div>
 
         {/* Right Column — Roster Sheet */}
-        <div className="flex-1 flex flex-col rounded-xl bg-muted/50 overflow-hidden min-w-0">
-
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-muted/50">
           {/* Header */}
-          <div className="flex items-center gap-3 px-3 py-2 border-b border-border shrink-0">
-            <span className="w-16 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider shrink-0">
+          <div className="flex shrink-0 items-center gap-3 border-b border-border px-3 py-2">
+            <span className="w-16 shrink-0 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
               Slot
             </span>
-            <span className="w-20 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider shrink-0">
+            <span className="w-20 shrink-0 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
               Budget
             </span>
-            <div className="flex flex-1 gap-2 min-w-0">
+            <div className="flex min-w-0 flex-1 gap-2">
               {["Option 1", "Option 2", "Option 3"].map((label) => (
                 <span
                   key={label}
-                  className="flex-1 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider"
+                  className="flex-1 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase"
                 >
                   {label}
                 </span>
@@ -722,7 +1073,7 @@ export function TemplatesClient({ players }: { players: Player[] }) {
 
           {/* Slot Rows */}
           <div className="flex-1 overflow-y-auto">
-            {strategy.slots.map((slot, i) => (
+            {activeSlots.map((slot, i) => (
               <SlotRow
                 key={`${slot.label}-${i}`}
                 slot={slot}
@@ -730,18 +1081,33 @@ export function TemplatesClient({ players }: { players: Player[] }) {
                 accentClass={strategy.accentClass}
                 selectedPlayerId={selectedPlayer?.id ?? null}
                 onPlayerSelect={setSelectedPlayer}
+                onBudgetChange={
+                  isCustom
+                    ? (v) => {
+                        setCustomBudgets((prev) => {
+                          const next = [...prev]
+                          next[i] = v
+                          return next
+                        })
+                      }
+                    : undefined
+                }
               />
             ))}
           </div>
         </div>
 
         {/* Right Column — Player Detail + Comps */}
-        <div className="w-80 shrink-0 flex flex-col gap-3 overflow-y-auto">
-          <div className="rounded-xl bg-muted/50 p-4 min-h-[200px]">
+        <div className="flex w-80 shrink-0 flex-col gap-3 overflow-y-auto">
+          <div className="min-h-[200px] rounded-xl bg-muted/50 p-4">
             <PlayerDetail player={selectedPlayer} globalMax={globalMax} />
           </div>
           <PositionalComps
-            label={selectedPlayer ? `Similar ${selectedPlayer.pos ?? ""}s` : "Positional comps"}
+            label={
+              selectedPlayer
+                ? `Similar ${selectedPlayer.pos ?? ""}s`
+                : "Positional comps"
+            }
             players={positionalComps}
           />
         </div>
