@@ -637,20 +637,22 @@ function PlayerCard({
           )}
         </div>
       </div>
-      <p className="truncate text-[11px] leading-tight font-medium">
-        {player.name}
+      <p className="flex justify-between truncate text-[11px] leading-tight font-medium">
+        {player.name}{" "}
+        {player.team && (
+          <span className="text-[10px] leading-none text-muted-foreground">
+            {player.team}
+          </span>
+        )}
       </p>
       <div className="flex items-center justify-between">
-        {player.team && (
-          <p className="text-[10px] leading-none text-muted-foreground">
-            {player.team}
-          </p>
-        )}
         {(player.positionalTier || player.overallTier) && (
           <p className="font-mono text-[10px] leading-none text-muted-foreground/60">
             {[
-              player.positionalTier ? `Pos${player.positionalTier}` : null,
-              player.overallTier ? `${player.overallTier}` : null,
+              player.positionalTier
+                ? `${player.positionalTier} ${player.pos}`
+                : null,
+              player.overallTier ? `${player.overallTier} player` : null,
             ]
               .filter(Boolean)
               .join(" · ")}
