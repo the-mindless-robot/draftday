@@ -493,6 +493,40 @@ function SlotRow({
   )
 }
 
+function PositionalComps({ label, players }: { label: string; players: Player[] }) {
+  if (players.length === 0) return null
+  return (
+    <div className="rounded-xl bg-muted/50 p-3 shrink-0">
+      <p className="mb-2 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
+        {label}
+      </p>
+      <div className="flex flex-col gap-1.5">
+        {players.map((p) => {
+          const salary = fbgSalary(p)
+          const colors = POS_COLORS[p.pos ?? ""] ?? { text: "text-muted-foreground" }
+          return (
+            <div key={p.id} className="flex items-center gap-2 text-xs">
+              <span className={cn("w-10 shrink-0 font-mono font-semibold", colors.text)}>
+                {p.pos}{p.positionalRank ?? ""}
+              </span>
+              <span className="min-w-0 flex-1 truncate font-medium">
+                {p.name}
+                {p.team ? <span className="text-muted-foreground"> {p.team}</span> : null}
+              </span>
+              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                #{p.overallRank ?? "—"}
+              </span>
+              <span className="w-8 shrink-0 text-right font-mono text-muted-foreground">
+                {salary != null ? `$${salary.toFixed(0)}` : "—"}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function TemplatesClient({ players }: { players: Player[] }) {
@@ -515,6 +549,29 @@ export function TemplatesClient({ players }: { players: Player[] }) {
       return result
     })
   }, [players, strategy])
+
+  const rosterPlayerIds = useMemo(
+    () => new Set(slotPlayers.flat().map((p) => p.id)),
+    [slotPlayers],
+  )
+
+  const positionalComps = useMemo(() => {
+    if (!selectedPlayer) return []
+    const rank = selectedPlayer.overallRank ?? 999
+    return players
+      .filter(
+        (p) =>
+          p.id !== selectedPlayer.id &&
+          !rosterPlayerIds.has(p.id) &&
+          p.pos === selectedPlayer.pos,
+      )
+      .sort(
+        (a, b) =>
+          Math.abs((a.overallRank ?? 999) - rank) -
+          Math.abs((b.overallRank ?? 999) - rank),
+      )
+      .slice(0, 5)
+  }, [selectedPlayer, players, rosterPlayerIds])
 
   return (
     <div className="flex flex-col h-full overflow-hidden p-4 gap-4">
@@ -639,9 +696,15 @@ export function TemplatesClient({ players }: { players: Player[] }) {
           </div>
         </div>
 
-        {/* Right Column — Player Detail */}
-        <div className="w-80 shrink-0 rounded-xl bg-muted/50 overflow-y-auto p-4">
-          <PlayerDetail player={selectedPlayer} globalMax={globalMax} />
+        {/* Right Column — Player Detail + Comps */}
+        <div className="w-80 shrink-0 flex flex-col gap-3 overflow-y-auto">
+          <div className="rounded-xl bg-muted/50 p-4 min-h-[200px]">
+            <PlayerDetail player={selectedPlayer} globalMax={globalMax} />
+          </div>
+          <PositionalComps
+            label={selectedPlayer ? `Similar ${selectedPlayer.pos ?? ""}s` : "Positional comps"}
+            players={positionalComps}
+          />
         </div>
       </div>
     </div>
