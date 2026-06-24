@@ -227,7 +227,7 @@ export function PlayerDetail({
           return (
             <div className="grid grid-cols-3 gap-x-4 gap-y-2">
               <KV label="Range" value={fbgRange} />
-              <KV label="ESPN" value={player.scEspn200} />
+              <KV label="ESPN" value={player.scEspn200 != null ? `$${player.scEspn200}` : null} />
               <DeltaKV label="Δ Salary" delta={delta} prefix="$" invert />
             </div>
           )
@@ -294,29 +294,27 @@ export function PlayerDetail({
       <div className="h-px bg-border/50" />
 
       {/* Bio */}
-      <div>
-        <SectionLabel>Bio</SectionLabel>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <KV label="Age" value={player.age} />
-          <KV
-            label="Experience"
-            value={
-              player.experience != null
-                ? `${player.experience} yr${player.experience !== 1 ? "s" : ""}`
-                : null
-            }
-          />
+      <div className="flex">
+        <div>
+          <SectionLabel>Bio</SectionLabel>
+          <div className="grid grid-cols-4 gap-x-4 gap-y-2">
+            <KV label="Age" value={player.age} />
+            <KV
+              label="Exp."
+              value={
+                player.experience != null
+                  ? `${player.experience} yr${player.experience !== 1 ? "s" : ""}`
+                  : null
+              }
+            />
+          </div>
         </div>
-      </div>
-
-      <div className="h-px bg-border/50" />
-
-      {/* Projections */}
-      <div>
-        <SectionLabel>Projections</SectionLabel>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <KV label="Proj Points" value={player.projPoints?.toFixed(1)} />
-          <KV label="Proj Games" value={player.projGames?.toFixed(1)} />
+        <div>
+          <SectionLabel>Projections</SectionLabel>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <KV label="Proj Points" value={player.projPoints?.toFixed(1)} />
+            <KV label="Proj Games" value={player.projGames?.toFixed(1)} />
+          </div>
         </div>
       </div>
     </div>
