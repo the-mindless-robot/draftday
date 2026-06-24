@@ -20,6 +20,7 @@ import {
   BotIcon,
   TerminalIcon,
   DatabaseIcon,
+  LayersIcon,
 } from "lucide-react"
 const data = {
   navMain: [
@@ -53,6 +54,12 @@ const data = {
       title: "Import",
       url: "/import",
       icon: <DatabaseIcon />,
+      items: [],
+    },
+    {
+      title: "Templates",
+      url: "/templates",
+      icon: <LayersIcon />,
       items: [],
     },
   ],
