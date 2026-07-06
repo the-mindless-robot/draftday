@@ -452,23 +452,27 @@ export function PlayerDetail({
         {(() => {
           const fbg250 = parseSalary(player.scFbg250)
           const fbg200 = parseSalary(player.scFbg200)
-          const espn = parseSalary(player.scEspn200)
+          const espn200 = parseSalary(player.scEspn200)
+          const espn250 = espn200 != null ? Math.round(espn200 * 1.25) : null
           const fbgAvg =
             fbg250 != null && fbg200 != null
               ? (fbg250 + fbg200) / 2
               : (fbg250 ?? fbg200)
-          const delta = espn != null && fbgAvg != null ? espn - fbgAvg : null
+          const delta = espn200 != null && fbgAvg != null ? espn200 - fbgAvg : null
           const fbgRange =
             player.scFbg250 != null && player.scFbg200 != null
               ? `${player.scFbg250} – ${player.scFbg200}`
               : (player.scFbg250 ?? player.scFbg200)
+          const espnRange =
+            espn250 != null && espn200 != null
+              ? `$${espn250} – $${espn200}`
+              : espn200 != null
+                ? `$${espn200}`
+                : null
           return (
             <div className="grid grid-cols-3 gap-x-4 gap-y-2">
-              <KV label="Range" value={fbgRange} />
-              <KV
-                label="ESPN"
-                value={player.scEspn200 != null ? `$${player.scEspn200}` : null}
-              />
+              <KV label="FBG Range" value={fbgRange} />
+              <KV label="ESPN Range" value={espnRange} />
               <DeltaKV label="Δ Salary" delta={delta} prefix="$" invert />
             </div>
           )
