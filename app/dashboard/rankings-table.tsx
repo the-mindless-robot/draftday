@@ -263,13 +263,12 @@ const columns: ColumnDef<RankedPlayer>[] = [
   {
     id: "espn",
     header: ({ column }) => <SortableHeader column={column} label="ESPN" />,
-
+    accessorFn: (row) => parseSalary(row.scEspn200),
     cell: ({ row }) => {
-      return (
-        <span>
-          {row.original.scEspn200 != null ? `$${row.original.scEspn200}` : "—"}
-        </span>
-      )
+      const base = parseSalary(row.original.scEspn200)
+      if (base == null) return <span>—</span>
+      const high = Math.round(base * 1.25)
+      return <span>{`$${high} - $${base}`}</span>
     },
   },
   {
