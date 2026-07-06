@@ -153,15 +153,19 @@ function BiBar({
   )
 }
 
-// Fixed x-axis window: Jun 1 – Oct 1, 2025
-const X_START = new Date("2025-06-01T00:00:00").getTime()
-const X_END = new Date("2025-10-01T00:00:00").getTime()
-const X_MONTHS: { label: string; ms: number }[] = [
-  { label: "Jun", ms: new Date("2025-06-01T00:00:00").getTime() },
-  { label: "Jul", ms: new Date("2025-07-01T00:00:00").getTime() },
-  { label: "Aug", ms: new Date("2025-08-01T00:00:00").getTime() },
-  { label: "Sep", ms: new Date("2025-09-01T00:00:00").getTime() },
-]
+function seasonWindow(year: number) {
+  const ms = (m: number) => new Date(`${year}-${String(m).padStart(2, "0")}-01T00:00:00`).getTime()
+  return {
+    start: ms(6),
+    end: ms(10),
+    months: [
+      { label: "Jun", ms: ms(6) },
+      { label: "Jul", ms: ms(7) },
+      { label: "Aug", ms: ms(8) },
+      { label: "Sep", ms: ms(9) },
+    ],
+  }
+}
 
 type ChartPoint = { time: number; delta: number }
 
@@ -198,6 +202,9 @@ function RankHistoryChart({ fbg }: { fbg: RankingSnapshot[] }) {
     )
   }
 
+  const year = new Date(pts[0].time).getFullYear()
+  const { start: xStart, end: xEnd, months } = seasonWindow(year)
+
   const W = 280
   const H = 90
   const pL = 28 // room for y-axis labels
@@ -207,8 +214,8 @@ function RankHistoryChart({ fbg }: { fbg: RankingSnapshot[] }) {
   const cW = W - pL - pR
   const cH = H - pT - pB
 
-  const xRange = X_END - X_START
-  const toX = (ms: number) => pL + ((ms - X_START) / xRange) * cW
+  const xRange = xEnd - xStart
+  const toX = (ms: number) => pL + ((ms - xStart) / xRange) * cW
 
   const allDeltas = pts.map((p) => p.delta)
   const maxAbs = Math.max(...allDeltas.map(Math.abs), 3)
@@ -284,7 +291,7 @@ function RankHistoryChart({ fbg }: { fbg: RankingSnapshot[] }) {
         ))}
 
         {/* Month labels on x-axis */}
-        {X_MONTHS.map(({ label, ms }) => {
+        {months.map(({ label, ms }) => {
           const x = toX(ms)
           if (x < pL || x > W - pR) return null
           return (
@@ -303,7 +310,7 @@ function RankHistoryChart({ fbg }: { fbg: RankingSnapshot[] }) {
         })}
 
         {/* Vertical month guide lines */}
-        {X_MONTHS.map(({ label, ms }) => {
+        {months.map(({ label, ms }) => {
           const x = toX(ms)
           if (x < pL || x > W - pR) return null
           return (
