@@ -28,6 +28,8 @@ type Player = {
   scFbg200: string | null
   scFbgScaled: string | null
   scEspn200: string | null
+  fbgRankDelta: number | null
+  espnRankDelta: number | null
 }
 
 type RosterSlot = {
@@ -1102,7 +1104,7 @@ export function TemplatesClient({ players }: { players: Player[] }) {
         {/* Right Column — Player Detail + Comps */}
         <div className="flex w-80 shrink-0 flex-col gap-3 overflow-y-auto">
           <div className="min-h-[200px] rounded-xl bg-muted/50 p-4">
-            <PlayerDetail player={selectedPlayer} globalMax={globalMax} />
+            <PlayerDetail player={selectedPlayer} globalMax={globalMax} rankingHistory={null} />
           </div>
           <PositionalComps
             label={

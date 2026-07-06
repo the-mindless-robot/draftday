@@ -72,6 +72,8 @@ type RankedPlayer = {
   scFbg200: string | null
   scFbgScaled: string | null
   scEspn200: string | null
+  fbgRankDelta: number | null
+  espnRankDelta: number | null
 }
 
 function parseSalary(val: string | null): number | null {
@@ -130,14 +132,29 @@ function ScaleBar({
   )
 }
 
+function RankDeltaBadge({ delta }: { delta: number | null }) {
+  if (delta == null || delta === 0) return null
+  const improved = delta > 0
+  return (
+    <span
+      className={`text-[10px] font-semibold tabular-nums ${improved ? "text-green-400" : "text-red-400"}`}
+    >
+      {improved ? `↑${delta}` : `↓${Math.abs(delta)}`}
+    </span>
+  )
+}
+
 const columns: ColumnDef<RankedPlayer>[] = [
   {
     accessorKey: "overallRank",
     header: ({ column }) => <SortableHeader column={column} label="Rank" />,
-    cell: ({ getValue }) => {
+    cell: ({ row }) => {
+      const rank = row.original.overallRank
+      const delta = row.original.fbgRankDelta
       return (
-        <span className="font-mono text-muted-foreground">
-          {(getValue() as number) ?? "—"}
+        <span className="flex items-center gap-1">
+          <span className="font-mono text-muted-foreground">{rank ?? "—"}</span>
+          <RankDeltaBadge delta={delta} />
         </span>
       )
     },
@@ -147,10 +164,13 @@ const columns: ColumnDef<RankedPlayer>[] = [
     header: ({ column }) => (
       <SortableHeader column={column} label="ESPN Rank" />
     ),
-    cell: ({ getValue }) => {
+    cell: ({ row }) => {
+      const rank = row.original.espnOverallRank
+      const delta = row.original.espnRankDelta
       return (
-        <span className="font-mono text-muted-foreground">
-          {(getValue() as number) ?? "—"}
+        <span className="flex items-center gap-1">
+          <span className="font-mono text-muted-foreground">{rank ?? "—"}</span>
+          <RankDeltaBadge delta={delta} />
         </span>
       )
     },

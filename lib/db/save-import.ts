@@ -106,12 +106,19 @@ export async function saveImport({
             continue
           }
 
+          const newEspnOverallRank = Number(row.rank) || null
+          const espnRankDelta =
+            player.espnOverallRank != null && newEspnOverallRank != null
+              ? player.espnOverallRank - newEspnOverallRank
+              : null
+
           await tx.player.update({
             where: { id: player.id },
             data: {
-              espnOverallRank: Number(row.rank) || null,
+              espnOverallRank: newEspnOverallRank,
               espnPositionalRank: Number(row.positional_rank) || null,
               scEspn200: String(row.salary) || null,
+              espnRankDelta,
             },
           })
 
@@ -142,15 +149,26 @@ export async function saveImport({
               : { scFbg200: row["Salary Cap"] || null }
 
           const { pos, positionalRank } = splitPos(row.Pos)
+          const newOverallRank = toInt(row.Rank)
+
+          const existing = await tx.player.findUnique({
+            where: { fbgId: row.playerId },
+            select: { overallRank: true },
+          })
+          const fbgRankDelta =
+            existing?.overallRank != null && newOverallRank != null
+              ? existing.overallRank - newOverallRank
+              : null
 
           const rankFields = {
             pos,
-            overallRank: toInt(row.Rank),
+            overallRank: newOverallRank,
             positionalRank,
             projPoints: toFloat(row.Points),
             projGames: toFloat(row.Games),
             upside: toFloat(row.Upside),
             downside: toFloat(row.Downside),
+            fbgRankDelta,
           }
 
           const player = await tx.player.upsert({

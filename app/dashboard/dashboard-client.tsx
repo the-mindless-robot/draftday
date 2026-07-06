@@ -1,8 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { RankingsTable } from "./rankings-table"
 import { PlayerDetail } from "./player-detail"
+
+type RankingSnapshot = {
+  overallRank: number | null
+  positionalRank: number | null
+  importedAt: string
+}
+
+type RankingHistory = {
+  fbg: RankingSnapshot[]
+  espn: RankingSnapshot[]
+}
 
 type RankedPlayer = {
   id: string
@@ -26,6 +37,8 @@ type RankedPlayer = {
   scFbg200: string | null
   scFbgScaled: string | null
   scEspn200: string | null
+  fbgRankDelta: number | null
+  espnRankDelta: number | null
 }
 
 const FLEX_POS = ["WR", "RB", "TE"]
@@ -121,6 +134,18 @@ function getSimilar(
 
 export function DashboardClient({ players }: { players: RankedPlayer[] }) {
   const [selectedPlayer, setSelectedPlayer] = useState<RankedPlayer | null>(null)
+  const [rankingHistory, setRankingHistory] = useState<RankingHistory | null>(null)
+
+  useEffect(() => {
+    if (!selectedPlayer) {
+      setRankingHistory(null)
+      return
+    }
+    fetch(`/api/players/${selectedPlayer.id}/rankings/history`)
+      .then((r) => r.json())
+      .then(setRankingHistory)
+      .catch(() => setRankingHistory(null))
+  }, [selectedPlayer?.id])
 
   const globalMax = Math.max(
     ...players.map((p) => Math.max(p.upside ?? 0, p.downside ?? 0)),
@@ -151,7 +176,7 @@ export function DashboardClient({ players }: { players: RankedPlayer[] }) {
       </div>
       <div className="flex flex-col gap-3 w-96 shrink-0 overflow-y-auto">
         <div className="flex-1 rounded-xl bg-muted/50 p-4 overflow-y-auto">
-          <PlayerDetail player={selectedPlayer} globalMax={globalMax} />
+          <PlayerDetail player={selectedPlayer} globalMax={globalMax} rankingHistory={rankingHistory} />
         </div>
         <SimilarPlayers
           label={selectedPlayer ? `Similar ${selectedPlayer.pos ?? ""}s` : "Positional comps"}

@@ -13,6 +13,8 @@ const select = {
   positionalRank: true,
   espnOverallRank: true,
   espnPositionalRank: true,
+  fbgRankDelta: true,
+  espnRankDelta: true,
   pos: true,
   projPoints: true,
   projGames: true,

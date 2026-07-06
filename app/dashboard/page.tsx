@@ -23,6 +23,8 @@ export default async function Page() {
       espnOverallRank: true,
       positionalRank: true,
       espnPositionalRank: true,
+      fbgRankDelta: true,
+      espnRankDelta: true,
       pos: true,
       projPoints: true,
       projGames: true,

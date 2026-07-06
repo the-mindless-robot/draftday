@@ -1,5 +1,16 @@
 import { cn } from "@/lib/utils"
 
+type RankingSnapshot = {
+  overallRank: number | null
+  positionalRank: number | null
+  importedAt: string
+}
+
+type RankingHistory = {
+  fbg: RankingSnapshot[]
+  espn: RankingSnapshot[]
+}
+
 type RankedPlayer = {
   id: string
   name: string
@@ -22,6 +33,8 @@ type RankedPlayer = {
   scFbg200: string | null
   scFbgScaled: string | null
   scEspn200: string | null
+  fbgRankDelta: number | null
+  espnRankDelta: number | null
 }
 
 function posColor(pos: string | null): string {
@@ -140,12 +153,183 @@ function BiBar({
   )
 }
 
+// Fixed x-axis window: Jun 1 – Oct 1, 2025
+const X_START = new Date("2025-06-01T00:00:00").getTime()
+const X_END = new Date("2025-10-01T00:00:00").getTime()
+const X_MONTHS: { label: string; ms: number }[] = [
+  { label: "Jun", ms: new Date("2025-06-01T00:00:00").getTime() },
+  { label: "Jul", ms: new Date("2025-07-01T00:00:00").getTime() },
+  { label: "Aug", ms: new Date("2025-08-01T00:00:00").getTime() },
+  { label: "Sep", ms: new Date("2025-09-01T00:00:00").getTime() },
+]
+
+type ChartPoint = { time: number; delta: number }
+
+function dedupeByDay(snapshots: RankingSnapshot[]): RankingSnapshot[] {
+  const byDay = new Map<string, RankingSnapshot>()
+  for (const s of snapshots) {
+    const day = s.importedAt.slice(0, 10)
+    const existing = byDay.get(day)
+    if (!existing || s.importedAt > existing.importedAt) byDay.set(day, s)
+  }
+  return [...byDay.values()]
+    .filter((s) => s.overallRank != null)
+    .sort((a, b) => a.importedAt.localeCompare(b.importedAt))
+}
+
+function buildCumulativeDeltas(snapshots: RankingSnapshot[]): ChartPoint[] {
+  if (snapshots.length === 0) return []
+  const initialRank = snapshots[0].overallRank!
+  return snapshots.map((s) => ({
+    time: new Date(s.importedAt).getTime(),
+    delta: initialRank - s.overallRank!,
+  }))
+}
+
+function RankHistoryChart({ fbg }: { fbg: RankingSnapshot[] }) {
+  const deduped = dedupeByDay(fbg)
+  const pts = buildCumulativeDeltas(deduped)
+
+  if (pts.length === 0) {
+    return (
+      <p className="text-[10px] italic text-muted-foreground">
+        No FBG ranking data available.
+      </p>
+    )
+  }
+
+  const W = 280
+  const H = 90
+  const pL = 28 // room for y-axis labels
+  const pR = 8
+  const pT = 8
+  const pB = 18 // room for month labels
+  const cW = W - pL - pR
+  const cH = H - pT - pB
+
+  const xRange = X_END - X_START
+  const toX = (ms: number) => pL + ((ms - X_START) / xRange) * cW
+
+  const allDeltas = pts.map((p) => p.delta)
+  const maxAbs = Math.max(...allDeltas.map(Math.abs), 3)
+  const yPad = maxAbs * 0.15
+  const yTop = maxAbs + yPad
+  const yBot = -(maxAbs + yPad)
+  const yRange = yTop - yBot
+  const toY = (d: number) => pT + ((yTop - d) / yRange) * cH
+  const ptStr = pts.map((p) => `${toX(p.time).toFixed(1)},${toY(p.delta).toFixed(1)}`).join(" ")
+
+  // y-axis tick values: 0 ± half of maxAbs, rounded
+  const tickStep = Math.ceil(maxAbs / 2)
+  const yTicks = [-tickStep, 0, tickStep].filter((v) => Math.abs(v) <= maxAbs + yPad)
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <span className="flex items-center gap-1 text-[10px] text-blue-400">
+          <span className="inline-block h-0.5 w-3 rounded bg-blue-400" />
+          FBG vs. initial
+        </span>
+        <span className="text-[10px] text-muted-foreground/50">↑ improved · ↓ dropped</span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+        {/* Y-axis ticks + labels */}
+        {yTicks.map((v) => {
+          const y = toY(v)
+          return (
+            <g key={v}>
+              <line
+                x1={pL} y1={y} x2={W - pR} y2={y}
+                stroke="currentColor"
+                strokeOpacity={v === 0 ? 0.25 : 0.08}
+                strokeWidth={v === 0 ? 1 : 0.75}
+                strokeDasharray={v === 0 ? "3 3" : undefined}
+              />
+              <text
+                x={pL - 3}
+                y={y + 2}
+                fontSize="7"
+                fill="currentColor"
+                fillOpacity="0.4"
+                textAnchor="end"
+              >
+                {v > 0 ? `+${v}` : v}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* FBG line */}
+        {pts.length > 1 && (
+          <polyline
+            points={ptStr}
+            fill="none"
+            stroke="#60a5fa"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+
+        {/* Data point dots */}
+        {pts.map((p, i) => (
+          <circle
+            key={i}
+            cx={toX(p.time).toFixed(1)}
+            cy={toY(p.delta).toFixed(1)}
+            r="2.5"
+            fill="#60a5fa"
+            opacity="0.9"
+          />
+        ))}
+
+        {/* Month labels on x-axis */}
+        {X_MONTHS.map(({ label, ms }) => {
+          const x = toX(ms)
+          if (x < pL || x > W - pR) return null
+          return (
+            <text
+              key={label}
+              x={x.toFixed(1)}
+              y={H - 3}
+              fontSize="7"
+              fill="currentColor"
+              fillOpacity="0.4"
+              textAnchor="middle"
+            >
+              {label}
+            </text>
+          )
+        })}
+
+        {/* Vertical month guide lines */}
+        {X_MONTHS.map(({ label, ms }) => {
+          const x = toX(ms)
+          if (x < pL || x > W - pR) return null
+          return (
+            <line
+              key={`grid-${label}`}
+              x1={x.toFixed(1)} y1={pT}
+              x2={x.toFixed(1)} y2={H - pB}
+              stroke="currentColor"
+              strokeOpacity="0.06"
+              strokeWidth="0.75"
+            />
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
 export function PlayerDetail({
   player,
   globalMax,
+  rankingHistory,
 }: {
   player: RankedPlayer | null
   globalMax: number
+  rankingHistory: RankingHistory | null
 }) {
   if (!player) {
     return (
@@ -278,6 +462,16 @@ export function PlayerDetail({
           <KV label="Pos Tier" value={player.positionalTier} />
         </div>
       </div>
+
+      {(rankingHistory?.fbg?.length || rankingHistory?.espn?.length) ? (
+        <>
+          <div className="h-px bg-border/50" />
+          <div>
+            <SectionLabel>Rank Movement</SectionLabel>
+            <RankHistoryChart fbg={rankingHistory?.fbg ?? []} />
+          </div>
+        </>
+      ) : null}
 
       <div className="h-px bg-border/50" />
 

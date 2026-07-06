@@ -31,6 +31,8 @@ export default async function Page() {
       scFbg200: true,
       scFbgScaled: true,
       scEspn200: true,
+      fbgRankDelta: true,
+      espnRankDelta: true,
     },
   })
 

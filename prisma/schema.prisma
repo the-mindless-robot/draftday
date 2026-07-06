@@ -81,6 +81,8 @@ model Player {
   positionalRank     Int?    @map("positional_rank")
   espnOverallRank    Int?    @map("espn_overall_rank")
   espnPositionalRank Int?    @map("espn_positional_rank")
+  fbgRankDelta       Int?    @map("fbg_rank_delta")
+  espnRankDelta      Int?    @map("espn_rank_delta")
   projPoints         Float?  @map("proj_points")
   projGames          Float?  @map("proj_games")
   upside             Float?
