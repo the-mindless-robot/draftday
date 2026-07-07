@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 
 type RankedPlayer = {
   id: string
@@ -8,6 +8,7 @@ type RankedPlayer = {
   team: string | null
   pos: string | null
   positionalRank: number | null
+  positionalTier: string | null
   scFbg250: string | null
   scFbg200: string | null
   flagged: boolean
@@ -63,11 +64,16 @@ function fbgAvg(p: RankedPlayer): number | null {
 }
 
 export function MyTeam({ players }: { players: RankedPlayer[] }) {
+  const [budgets, setBudgets] = useState<number[]>(() =>
+    ROSTER_SLOTS.map((s) => s.budget)
+  )
+
   const suggestions = useMemo(() => {
     const myList = players.filter((p) => p.flagged)
     const used = new Set<string>()
 
-    return ROSTER_SLOTS.map((slot) => {
+    return ROSTER_SLOTS.map((slot, i) => {
+      const budget = budgets[i] ?? slot.budget
       const pick = myList
         .filter(
           (p) =>
@@ -78,13 +84,13 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
         .sort((a, b) => {
           const aVal = fbgAvg(a) ?? 0
           const bVal = fbgAvg(b) ?? 0
-          return Math.abs(slot.budget - aVal) - Math.abs(slot.budget - bVal)
+          return Math.abs(budget - aVal) - Math.abs(budget - bVal)
         })[0] ?? null
 
       if (pick) used.add(pick.id)
       return pick
     })
-  }, [players])
+  }, [players, budgets])
 
   const myListCount = players.filter((p) => p.flagged).length
 
@@ -99,8 +105,20 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
     )
   }
 
+  const totalBudget = budgets.reduce((sum, b) => sum + b, 0)
+  const overBudget = totalBudget > 250
+
   return (
     <div className="flex flex-col">
+      {/* Budget total */}
+      <div className={`mb-3 flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-semibold ${overBudget ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"}`}>
+        <span>Budget used</span>
+        <span className="font-mono">
+          ${totalBudget} / $250
+          {overBudget && <span className="ml-1.5">— over by ${totalBudget - 250}</span>}
+        </span>
+      </div>
+
       {/* Column headers */}
       <div className="mb-1 flex items-center gap-2 border-b border-border/30 pb-1.5 text-[10px] font-semibold tracking-wider text-muted-foreground/50 uppercase">
         <span className="w-11 shrink-0">Slot</span>
@@ -126,9 +144,23 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
             </span>
 
             {/* Budget */}
-            <span className="w-9 shrink-0 font-mono text-[11px] text-muted-foreground">
-              ${slot.budget}
-            </span>
+            <div className="flex w-9 shrink-0 items-center gap-0.5">
+              <span className="font-mono text-[11px] text-muted-foreground">$</span>
+              <input
+                type="number"
+                min={1}
+                value={budgets[i] ?? slot.budget}
+                onChange={(e) => {
+                  const val = Math.max(1, Number(e.target.value))
+                  setBudgets((prev) => {
+                    const next = [...prev]
+                    next[i] = val
+                    return next
+                  })
+                }}
+                className="w-8 [appearance:textfield] rounded border border-border bg-background px-1 py-0.5 text-right font-mono text-[11px] font-semibold text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+            </div>
 
             {/* Suggested player */}
             <div className="flex min-w-0 flex-1 flex-col gap-0">
@@ -144,9 +176,9 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
                       {player.name}
                     </span>
                   </div>
-                  {player.team && (
+                  {(player.team || player.positionalTier) && (
                     <span className="text-[10px] leading-none text-muted-foreground/60">
-                      {player.team}
+                      {[player.team, player.positionalTier].filter(Boolean).join(" · ")}
                     </span>
                   )}
                 </>
