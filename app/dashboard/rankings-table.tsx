@@ -10,7 +10,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Search } from "lucide-react"
+import { Search, Star } from "lucide-react"
 import { Fragment, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,6 +30,7 @@ declare module "@tanstack/react-table" {
     maxUpside: number
     maxDownside: number
     activePosition: string
+    onFlag?: (player: RankedPlayer) => void
   }
 }
 
@@ -74,6 +75,7 @@ type RankedPlayer = {
   scEspn200: string | null
   fbgRankDelta: number | null
   espnRankDelta: number | null
+  flagged: boolean
 }
 
 function parseSalary(val: string | null): number | null {
@@ -145,6 +147,26 @@ function RankDeltaBadge({ delta }: { delta: number | null }) {
 }
 
 const columns: ColumnDef<RankedPlayer>[] = [
+  {
+    id: "flag",
+    header: () => null,
+    cell: ({ row, table }) => {
+      const player = row.original
+      return (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            table.options.meta?.onFlag?.(player)
+          }}
+          className="flex items-center justify-center p-0.5 transition-opacity hover:opacity-80"
+        >
+          <Star
+            className={`h-3.5 w-3.5 ${player.flagged ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"}`}
+          />
+        </button>
+      )
+    },
+  },
   {
     accessorKey: "overallRank",
     header: ({ column }) => <SortableHeader column={column} label="Rank" />,
@@ -343,10 +365,12 @@ export function RankingsTable({
   players,
   selectedPlayerId,
   onPlayerSelect,
+  onFlag,
 }: {
   players: RankedPlayer[]
   selectedPlayerId?: string
   onPlayerSelect?: (player: RankedPlayer) => void
+  onFlag?: (player: RankedPlayer) => void
 }) {
   "use no memo"
   const [activePosition, setActivePosition] = useState<Position>("overall")
@@ -382,7 +406,7 @@ export function RankingsTable({
   const table = useReactTable({
     data,
     columns,
-    meta: { maxUpside, maxDownside, activePosition },
+    meta: { maxUpside, maxDownside, activePosition, onFlag },
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,

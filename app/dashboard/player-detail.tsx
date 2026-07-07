@@ -35,6 +35,7 @@ type RankedPlayer = {
   scEspn200: string | null
   fbgRankDelta: number | null
   espnRankDelta: number | null
+  flagged: boolean
 }
 
 function posColor(pos: string | null): string {
