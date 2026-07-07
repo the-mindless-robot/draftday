@@ -201,34 +201,6 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
         </div>
       </div>
 
-      {/* Saved snapshots */}
-      {snapshots.length > 0 && (
-        <div className="mb-3 flex flex-col gap-0.5">
-          {snapshots.map((s) => (
-            <div
-              key={s.id}
-              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] hover:bg-muted/50"
-            >
-              <span className="min-w-0 flex-1 truncate font-mono text-muted-foreground">
-                {s.name}
-              </span>
-              <button
-                onClick={() => handleLoad(s)}
-                className="shrink-0 text-[10px] text-muted-foreground/60 transition-colors hover:text-foreground"
-              >
-                Load
-              </button>
-              <button
-                onClick={() => handleDelete(s.id)}
-                className="shrink-0 text-muted-foreground/40 transition-colors hover:text-red-400"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Column headers */}
       <div className="mb-1 flex items-center gap-2 border-b border-border/30 pb-1.5 text-[10px] font-semibold tracking-wider text-muted-foreground/50 uppercase">
         <span className="w-11 shrink-0">Slot</span>
@@ -314,6 +286,34 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
           </div>
         )
       })}
+
+      {/* Saved snapshots */}
+      {snapshots.length > 0 && (
+        <div className="mt-3 flex flex-col gap-0.5">
+          {snapshots.map((s) => (
+            <div
+              key={s.id}
+              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] hover:bg-muted/50"
+            >
+              <span className="min-w-0 flex-1 truncate font-mono text-muted-foreground">
+                {s.name}
+              </span>
+              <button
+                onClick={() => handleLoad(s)}
+                className="shrink-0 text-[10px] text-muted-foreground/60 transition-colors hover:text-foreground"
+              >
+                Load
+              </button>
+              <button
+                onClick={() => handleDelete(s.id)}
+                className="shrink-0 text-muted-foreground/40 transition-colors hover:text-red-400"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
