@@ -33,7 +33,7 @@ export function MyList({
 }: {
   players: RankedPlayer[]
   onPlayerSelect?: (player: RankedPlayer) => void
-  onFlag?: (player: RankedPlayer) => void
+  onFlag?: (id: string) => void
 }) {
   const flagged = players.filter((p) => p.flagged)
 
@@ -88,7 +88,7 @@ export function MyList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      onFlag?.(p)
+                      onFlag?.(p.id)
                     }}
                     className="shrink-0 p-0.5 transition-opacity hover:opacity-60"
                   >

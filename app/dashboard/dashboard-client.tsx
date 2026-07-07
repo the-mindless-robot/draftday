@@ -241,7 +241,10 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
                 setSelectedPlayer(full)
                 setRightPanel("details")
               }}
-              onFlag={handleFlag}
+              onFlag={(id) => {
+                const p = players.find((pl) => pl.id === id)
+                if (p) handleFlag(p)
+              }}
             />
           )}
         </div>
