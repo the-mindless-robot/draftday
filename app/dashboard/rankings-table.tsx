@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { fbgPlayerUrl } from "@/lib/fbg-url"
 
 declare module "@tanstack/react-table" {
   interface TableMeta<TData extends RowData> {
@@ -53,6 +54,7 @@ const PK_POS = ["K", "PK"]
 
 type RankedPlayer = {
   id: string
+  fbgId: string
   name: string
   team: string | null
   age: number | null
@@ -255,7 +257,15 @@ const columns: ColumnDef<RankedPlayer>[] = [
     header: () => <span>Name</span>,
     cell: ({ row }) => (
       <span className="font-medium">
-        {row.original.name}
+        <a
+          href={fbgPlayerUrl(row.original.name, row.original.fbgId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="hover:underline"
+        >
+          {row.original.name}
+        </a>
         {row.original.team ? ` (${row.original.team})` : ""}
       </span>
     ),

@@ -2,9 +2,11 @@
 
 import { useMemo, useState, useEffect, useCallback } from "react"
 import { X } from "lucide-react"
+import { fbgPlayerUrl } from "@/lib/fbg-url"
 
 type RankedPlayer = {
   id: string
+  fbgId: string
   name: string
   team: string | null
   pos: string | null
@@ -254,9 +256,14 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
                     <span className={`shrink-0 font-mono text-[10px] font-semibold ${colors.text}`}>
                       {player.pos}{player.positionalRank ?? ""}
                     </span>
-                    <span className="truncate text-[11px] font-medium leading-tight">
+                    <a
+                      href={fbgPlayerUrl(player.name, player.fbgId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate text-[11px] font-medium leading-tight hover:underline"
+                    >
                       {player.name}
-                    </span>
+                    </a>
                   </div>
                   {(player.team || player.positionalTier) && (
                     <span className="text-[10px] leading-none text-muted-foreground/60">

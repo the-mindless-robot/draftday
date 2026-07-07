@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Star, User, Users } from "lucide-react"
+import { fbgPlayerUrl } from "@/lib/fbg-url"
 import { RankingsTable } from "./rankings-table"
 import { PlayerDetail } from "./player-detail"
 import { MyList } from "./my-list"
@@ -20,6 +21,7 @@ type RankingHistory = {
 
 type RankedPlayer = {
   id: string
+  fbgId: string
   name: string
   team: string | null
   age: number | null
@@ -94,10 +96,15 @@ function SimilarPlayers({
               <span className={`w-10 shrink-0 font-mono font-semibold ${posColor(p.pos)}`}>
                 {p.pos}{p.positionalRank ?? ""}
               </span>
-              <span className="min-w-0 flex-1 truncate font-medium">
+              <a
+                href={fbgPlayerUrl(p.name, p.fbgId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-w-0 flex-1 truncate font-medium hover:underline"
+              >
                 {p.name}
                 {p.team ? <span className="text-muted-foreground"> {p.team}</span> : null}
-              </span>
+              </a>
               <span className="shrink-0 font-mono text-muted-foreground">
                 #{p.overallRank ?? "—"}
               </span>
@@ -195,7 +202,10 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
         <RankingsTable
           players={players}
           selectedPlayerId={selectedPlayer?.id}
-          onPlayerSelect={setSelectedPlayer}
+          onPlayerSelect={(p) => {
+            setSelectedPlayer(p)
+            setRightPanel("details")
+          }}
           onFlag={handleFlag}
         />
       </div>
@@ -243,9 +253,10 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
               </button>
             </div>
           </div>
-          {rightPanel === "details" ? (
+          <div className={rightPanel !== "details" ? "hidden" : ""}>
             <PlayerDetail player={selectedPlayer} globalMax={globalMax} rankingHistory={rankingHistory} />
-          ) : rightPanel === "my-list" ? (
+          </div>
+          <div className={rightPanel !== "my-list" ? "hidden" : ""}>
             <MyList
               players={players}
               onPlayerSelect={(p) => {
@@ -258,9 +269,10 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
                 if (p) handleFlag(p)
               }}
             />
-          ) : (
+          </div>
+          <div className={rightPanel !== "my-team" ? "hidden" : ""}>
             <MyTeam players={players} />
-          )}
+          </div>
         </div>
         {rightPanel === "details" && selectedPlayer && (
           <>

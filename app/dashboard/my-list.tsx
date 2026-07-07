@@ -1,9 +1,11 @@
 "use client"
 
 import { Star } from "lucide-react"
+import { fbgPlayerUrl } from "@/lib/fbg-url"
 
 type RankedPlayer = {
   id: string
+  fbgId: string
   name: string
   team: string | null
   pos: string | null
@@ -78,10 +80,16 @@ export function MyList({
                   <span className={`w-8 shrink-0 font-mono font-semibold ${posColor(p.pos)}`}>
                     {p.pos}{p.positionalRank ?? ""}
                   </span>
-                  <span className="min-w-0 flex-1 truncate font-medium">
+                  <a
+                    href={fbgPlayerUrl(p.name, p.fbgId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="min-w-0 flex-1 truncate font-medium hover:underline"
+                  >
                     {p.name}
                     {p.team ? <span className="text-muted-foreground"> {p.team}</span> : null}
-                  </span>
+                  </a>
                   <span className="shrink-0 font-mono text-muted-foreground">
                     #{p.overallRank ?? "—"}
                   </span>

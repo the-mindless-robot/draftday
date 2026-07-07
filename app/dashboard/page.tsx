@@ -12,6 +12,7 @@ export default async function Page() {
     take: 300,
     select: {
       id: true,
+      fbgId: true,
       name: true,
       team: true,
       age: true,
