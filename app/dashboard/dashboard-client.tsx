@@ -237,7 +237,8 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
             <MyList
               players={players}
               onPlayerSelect={(p) => {
-                setSelectedPlayer(p)
+                const full = players.find((pl) => pl.id === p.id) ?? null
+                setSelectedPlayer(full)
                 setRightPanel("details")
               }}
               onFlag={handleFlag}
