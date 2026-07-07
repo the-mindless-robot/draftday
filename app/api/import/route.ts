@@ -88,8 +88,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rows = allRows.slice(0, ROW_CAP)
-    return NextResponse.json({ rows, count: rows.length, totalFound: allRows.length })
+    const validRows = allRows.filter((r) => r.playerId)
+    const rows = validRows.slice(0, ROW_CAP)
+    return NextResponse.json({
+      rows,
+      count: rows.length,
+      totalFound: allRows.length,
+      skipped: allRows.length - validRows.length,
+    })
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to parse table from HTML."
     return NextResponse.json({ error: message }, { status: 500 })

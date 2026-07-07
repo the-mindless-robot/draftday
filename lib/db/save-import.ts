@@ -161,9 +161,9 @@ export async function saveImport({
               : null
 
           const rankFields = {
-            pos,
+            ...(pos !== null && { pos }),
             overallRank: newOverallRank,
-            positionalRank,
+            ...(positionalRank !== null && { positionalRank }),
             projPoints: toFloat(row.Points),
             projGames: toFloat(row.Games),
             upside: toFloat(row.Upside),

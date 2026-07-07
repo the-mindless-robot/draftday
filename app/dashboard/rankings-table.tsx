@@ -266,8 +266,14 @@ const columns: ColumnDef<RankedPlayer>[] = [
     header: () => <span>Pos</span>,
     cell: ({ row }) => {
       const pos = row.original.pos
-      const fbg = pos ? `${pos}${row.original.positionalRank ?? ""}` : "—"
-      const espn = pos ? `${pos}${row.original.espnPositionalRank ?? ""}` : "—"
+      const fbg =
+        pos && row.original.positionalRank != null
+          ? `${pos}${row.original.positionalRank}`
+          : "—"
+      const espn =
+        pos && row.original.espnPositionalRank != null
+          ? `${pos}${row.original.espnPositionalRank}`
+          : "—"
       return (
         <span className={`font-mono font-semibold ${posColor(pos)}`}>
           {fbg} / {espn}
