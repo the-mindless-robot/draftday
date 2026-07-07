@@ -47,6 +47,7 @@ export async function saveImport({
       })
 
       let saved = 0
+      const importedFbgIds: string[] = []
 
       for (const row of rows) {
         if (source === "espn") {
@@ -143,6 +144,8 @@ export async function saveImport({
         if (!row.playerId) continue
 
         if (position === "overall") {
+          importedFbgIds.push(row.playerId)
+
           const scField =
             budget === 250
               ? { scFbg250: row["Salary Cap"] || null }
@@ -226,6 +229,18 @@ export async function saveImport({
         }
 
         saved++
+      }
+
+      // Evict stale overall data for players absent from this import so stale
+      // ranks and tiers don't pollute ordering and tier dividers in the dashboard.
+      if (source === "fbg" && position === "overall" && importedFbgIds.length > 0) {
+        await tx.player.updateMany({
+          where: {
+            fbgId: { notIn: importedFbgIds },
+            overallRank: { not: null },
+          },
+          data: { overallRank: null, overallTier: null },
+        })
       }
 
       return { importId, saved }
