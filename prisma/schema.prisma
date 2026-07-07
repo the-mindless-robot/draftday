@@ -148,3 +148,12 @@ model PlayerRanking {
   @@unique([playerId, importId])
   @@map("player_rankings")
 }
+
+model TeamSnapshot {
+  id        String   @id @default(cuid())
+  name      String
+  budgets   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("team_snapshots")
+}
