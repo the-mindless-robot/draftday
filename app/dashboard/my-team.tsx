@@ -12,6 +12,7 @@ type RankedPlayer = {
   positionalTier: string | null
   scFbg250: string | null
   scFbg200: string | null
+  scEspn200: string | null
   flagged: boolean
 }
 
@@ -233,6 +234,8 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
         <span className="w-11 shrink-0">Slot</span>
         <span className="w-9 shrink-0">Bdgt</span>
         <span className="flex-1">Suggested</span>
+        <span className="w-9 shrink-0 text-right">Value</span>
+        <span className="w-8 shrink-0 text-right">Est.</span>
         <span className="w-10 shrink-0 text-right">Spent</span>
       </div>
 
@@ -293,6 +296,16 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
                 <span className="text-[11px] text-muted-foreground/40">—</span>
               )}
             </div>
+
+            {/* Value — avg FBG salary */}
+            <span className="w-9 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+              {player ? (() => { const v = fbgAvg(player); return v != null ? `$${v.toFixed(0)}` : "—" })() : "—"}
+            </span>
+
+            {/* Est. — ESPN $250 value (scEspn200 × 1.25) */}
+            <span className="w-8 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+              {player ? (() => { const b = parseSalary(player.scEspn200); return b != null ? `$${Math.round(b * 1.25)}` : "—" })() : "—"}
+            </span>
 
             {/* Spent — populated when draft functionality is added */}
             <span className="w-10 shrink-0 text-right font-mono text-[11px] text-muted-foreground/40">
