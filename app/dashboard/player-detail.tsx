@@ -458,7 +458,11 @@ export function PlayerDetail({
             fbg250 != null && fbg200 != null
               ? (fbg250 + fbg200) / 2
               : (fbg250 ?? fbg200)
-          const delta = espn200 != null && fbgAvg != null ? espn200 - fbgAvg : null
+          const espnAvg =
+            espn200 != null && espn250 != null
+              ? (espn200 + espn250) / 2
+              : espn200
+          const delta = espnAvg != null && fbgAvg != null ? fbgAvg - espnAvg : null
           const fbgRange =
             player.scFbg250 != null && player.scFbg200 != null
               ? `${player.scFbg250} – ${player.scFbg200}`
@@ -469,11 +473,30 @@ export function PlayerDetail({
               : espn200 != null
                 ? `$${espn200}`
                 : null
+          const deltaColor =
+            delta == null
+              ? "text-muted-foreground"
+              : Math.abs(delta) <= 2
+                ? "text-yellow-400"
+                : delta > 0
+                  ? "text-green-400"
+                  : "text-red-400"
+          const deltaDisplay =
+            delta != null
+              ? `${delta > 0 ? "+" : ""}$${delta.toFixed(0)}`
+              : null
           return (
             <div className="grid grid-cols-3 gap-x-4 gap-y-2">
               <KV label="FBG Range" value={fbgRange} />
               <KV label="ESPN Range" value={espnRange} />
-              <DeltaKV label="Δ Salary" delta={delta} prefix="$" invert />
+              <KV
+                label="Δ Salary"
+                value={
+                  deltaDisplay != null ? (
+                    <span className={deltaColor}>{deltaDisplay}</span>
+                  ) : null
+                }
+              />
             </div>
           )
         })()}

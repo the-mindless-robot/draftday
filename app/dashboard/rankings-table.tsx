@@ -201,6 +201,34 @@ const columns: ColumnDef<RankedPlayer>[] = [
     },
   },
   {
+    id: "salaryDelta",
+    header: ({ column }) => <SortableHeader column={column} label="Δ Salary" />,
+    accessorFn: (row) => {
+      const fbg250 = parseSalary(row.scFbg250)
+      const fbg200 = parseSalary(row.scFbg200)
+      const espn200 = parseSalary(row.scEspn200)
+      if (espn200 == null) return null
+      const fbgAvg =
+        fbg250 != null && fbg200 != null
+          ? (fbg250 + fbg200) / 2
+          : (fbg250 ?? fbg200)
+      const espnAvg = espn200 * 1.125
+      if (fbgAvg == null) return null
+      return fbgAvg - espnAvg
+    },
+    cell: ({ getValue }) => {
+      const delta = getValue() as number | null
+      if (delta == null) return <span className="text-muted-foreground">—</span>
+      const color =
+        Math.abs(delta) <= 2 ? "text-yellow-400" : delta > 0 ? "text-green-400" : "text-red-400"
+      return (
+        <span className={`font-mono ${color}`}>
+          {delta > 0 ? `+$${delta.toFixed(0)}` : delta < 0 ? `-$${Math.abs(delta).toFixed(0)}` : `$0`}
+        </span>
+      )
+    },
+  },
+  {
     accessorKey: "name",
     header: () => <span>Name</span>,
     cell: ({ row }) => (
@@ -211,29 +239,16 @@ const columns: ColumnDef<RankedPlayer>[] = [
     ),
   },
   {
-    accessorKey: "pos",
+    id: "pos",
+    accessorFn: (row) => row.positionalRank,
     header: () => <span>Pos</span>,
     cell: ({ row }) => {
       const pos = row.original.pos
-      const rank = row.original.positionalRank
-      const label = pos ? `${pos}${rank ?? ""}` : "—"
+      const fbg = pos ? `${pos}${row.original.positionalRank ?? ""}` : "—"
+      const espn = pos ? `${pos}${row.original.espnPositionalRank ?? ""}` : "—"
       return (
         <span className={`font-mono font-semibold ${posColor(pos)}`}>
-          {label}
-        </span>
-      )
-    },
-  },
-  {
-    accessorKey: "espnPositionalRank",
-    header: () => <span>ESPN POS</span>,
-    cell: ({ row }) => {
-      const pos = row.original.pos
-      const rank = row.original.espnPositionalRank
-      const label = pos ? `${pos}${rank ?? ""}` : "—"
-      return (
-        <span className={`font-mono font-semibold ${posColor(pos)}`}>
-          {label}
+          {fbg} / {espn}
         </span>
       )
     },
