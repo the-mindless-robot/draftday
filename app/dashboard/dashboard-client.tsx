@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Star, User } from "lucide-react"
+import { Star, User, Users } from "lucide-react"
 import { RankingsTable } from "./rankings-table"
 import { PlayerDetail } from "./player-detail"
 import { MyList } from "./my-list"
+import { MyTeam } from "./my-team"
 
 type RankingSnapshot = {
   overallRank: number | null
@@ -139,7 +140,7 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
   const [players, setPlayers] = useState(initialPlayers)
   const [selectedPlayer, setSelectedPlayer] = useState<RankedPlayer | null>(null)
   const [rankingHistory, setRankingHistory] = useState<RankingHistory | null>(null)
-  const [rightPanel, setRightPanel] = useState<"details" | "my-list">("details")
+  const [rightPanel, setRightPanel] = useState<"details" | "my-list" | "my-team">("details")
 
   useEffect(() => {
     if (!selectedPlayer) {
@@ -229,11 +230,22 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setRightPanel("my-team")}
+                className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition-colors ${
+                  rightPanel === "my-team"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Users className="h-3 w-3" />
+                My Team
+              </button>
             </div>
           </div>
           {rightPanel === "details" ? (
             <PlayerDetail player={selectedPlayer} globalMax={globalMax} rankingHistory={rankingHistory} />
-          ) : (
+          ) : rightPanel === "my-list" ? (
             <MyList
               players={players}
               onPlayerSelect={(p) => {
@@ -246,9 +258,11 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
                 if (p) handleFlag(p)
               }}
             />
+          ) : (
+            <MyTeam players={players} />
           )}
         </div>
-        {rightPanel === "details" && (
+        {rightPanel === "details" && selectedPlayer && (
           <>
             <SimilarPlayers
               label={selectedPlayer ? `Similar ${selectedPlayer.pos ?? ""}s` : "Positional comps"}
