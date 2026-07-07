@@ -33,6 +33,7 @@ export default async function Page() {
       scEspn200: true,
       fbgRankDelta: true,
       espnRankDelta: true,
+      flagged: true,
     },
   })
 

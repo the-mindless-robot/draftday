@@ -30,6 +30,7 @@ type Player = {
   scEspn200: string | null
   fbgRankDelta: number | null
   espnRankDelta: number | null
+  flagged: boolean
 }
 
 type RosterSlot = {
