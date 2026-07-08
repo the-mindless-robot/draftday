@@ -201,6 +201,14 @@ const columns: ColumnDef<RankedPlayer>[] = [
   {
     accessorKey: "espnOverallRank",
     header: ({ column }) => <SortableHeader column={column} label="Rank" />,
+    sortingFn: (a, b) => {
+      const av = a.original.espnOverallRank
+      const bv = b.original.espnOverallRank
+      if (av == null && bv == null) return 0
+      if (av == null) return 1
+      if (bv == null) return -1
+      return av - bv
+    },
     cell: ({ row }) => {
       const rank = row.original.espnOverallRank
       const delta = row.original.espnRankDelta
