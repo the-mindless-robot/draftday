@@ -336,7 +336,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     id: "estimate",
-    header: ({ column }) => <SortableHeader column={column} label="Estimate" />,
+    header: ({ column }) => <SortableHeader column={column} label="$" />,
     accessorFn: (row) => {
       const base = parseSalary(row.scEspn200)
       return base != null ? Math.round(base * 1.25) : null
@@ -348,9 +348,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     id: "espn",
-    header: ({ column }) => (
-      <SortableHeader column={column} label="Est. Range" />
-    ),
+    header: ({ column }) => <SortableHeader column={column} label="$Range" />,
     accessorFn: (row) => parseSalary(row.scEspn200),
     cell: ({ row }) => {
       const base = parseSalary(row.original.scEspn200)
