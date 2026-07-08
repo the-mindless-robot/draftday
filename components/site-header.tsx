@@ -33,7 +33,7 @@ export function SiteHeader() {
             <Link href="/teams">Teams</Link>
           </Button>
         </div>
-        <SearchForm className="w-full sm:ml-auto sm:w-auto" />
+        {/* <SearchForm className="w-full sm:ml-auto sm:w-auto" /> */}
       </div>
     </header>
   )

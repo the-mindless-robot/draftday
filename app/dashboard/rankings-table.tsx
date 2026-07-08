@@ -259,10 +259,18 @@ const columns: ColumnDef<RankedPlayer>[] = [
       const delta = getValue() as number | null
       if (delta == null) return <span className="text-muted-foreground">—</span>
       const color =
-        Math.abs(delta) <= 2 ? "text-yellow-400" : delta > 0 ? "text-green-400" : "text-red-400"
+        Math.abs(delta) <= 2
+          ? "text-yellow-400"
+          : delta > 0
+            ? "text-green-400"
+            : "text-red-400"
       return (
         <span className={`font-mono ${color}`}>
-          {delta > 0 ? `+$${delta.toFixed(0)}` : delta < 0 ? `-$${Math.abs(delta).toFixed(0)}` : `$0`}
+          {delta > 0
+            ? `+$${delta.toFixed(0)}`
+            : delta < 0
+              ? `-$${Math.abs(delta).toFixed(0)}`
+              : `$0`}
         </span>
       )
     },
@@ -309,9 +317,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
 
   {
     id: "salary",
-    header: ({ column }) => (
-      <SortableHeader column={column} label="Value" />
-    ),
+    header: ({ column }) => <SortableHeader column={column} label="Value" />,
     accessorFn: (row) => avgSalary(row.scFbg250, row.scFbg200),
     cell: ({ getValue }) => {
       const v = getValue() as number | null
@@ -342,7 +348,9 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     id: "espn",
-    header: ({ column }) => <SortableHeader column={column} label="Est. Range" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} label="Est. Range" />
+    ),
     accessorFn: (row) => parseSalary(row.scEspn200),
     cell: ({ row }) => {
       const base = parseSalary(row.original.scEspn200)
@@ -397,11 +405,11 @@ const columns: ColumnDef<RankedPlayer>[] = [
       )
     },
   },
-  {
-    accessorKey: "byeWeek",
-    header: () => <span>Bye</span>,
-    cell: ({ getValue }) => <span>{(getValue() as number | null) ?? "—"}</span>,
-  },
+  // {
+  //   accessorKey: "byeWeek",
+  //   header: () => <span>Bye</span>,
+  //   cell: ({ getValue }) => <span>{(getValue() as number | null) ?? "—"}</span>,
+  // },
 ]
 
 export function RankingsTable({
