@@ -186,7 +186,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     accessorKey: "overallRank",
-    header: ({ column }) => <SortableHeader column={column} label="Rank" />,
+    header: ({ column }) => <SortableHeader column={column} label="vRank" />,
     cell: ({ row }) => {
       const rank = row.original.overallRank
       const delta = row.original.fbgRankDelta
@@ -200,9 +200,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     accessorKey: "espnOverallRank",
-    header: ({ column }) => (
-      <SortableHeader column={column} label="ESPN Rank" />
-    ),
+    header: ({ column }) => <SortableHeader column={column} label="Rank" />,
     cell: ({ row }) => {
       const rank = row.original.espnOverallRank
       const delta = row.original.espnRankDelta
@@ -216,7 +214,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     id: "rankDelta",
-    header: ({ column }) => <SortableHeader column={column} label="Δ Rank" />,
+    header: ({ column }) => <SortableHeader column={column} label="Δ" />,
     accessorFn: (row) => {
       if (row.espnOverallRank == null || row.overallRank == null) return null
       return row.espnOverallRank - row.overallRank
@@ -241,7 +239,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     id: "salaryDelta",
-    header: ({ column }) => <SortableHeader column={column} label="Δ Salary" />,
+    header: ({ column }) => <SortableHeader column={column} label="Δ$" />,
     accessorFn: (row) => {
       const fbg250 = parseSalary(row.scFbg250)
       const fbg200 = parseSalary(row.scFbg200)
@@ -277,7 +275,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   },
   {
     accessorKey: "name",
-    header: () => <span>Name</span>,
+    header: () => <span>Player</span>,
     cell: ({ row }) => (
       <span className="font-medium">
         <a
