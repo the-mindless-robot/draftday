@@ -108,9 +108,14 @@ export async function saveImport({
           }
 
           const newEspnOverallRank = Number(row.rank) || null
+          const firstEspnRanking = await tx.playerRanking.findFirst({
+            where: { playerId: player.id, source: "espn", position: "overall" },
+            orderBy: { importedAt: "asc" },
+            select: { overallRank: true },
+          })
           const espnRankDelta =
-            player.espnOverallRank != null && newEspnOverallRank != null
-              ? player.espnOverallRank - newEspnOverallRank
+            firstEspnRanking?.overallRank != null && newEspnOverallRank != null
+              ? firstEspnRanking.overallRank - newEspnOverallRank
               : null
 
           await tx.player.update({
@@ -154,13 +159,18 @@ export async function saveImport({
           const { pos, positionalRank } = splitPos(row.Pos)
           const newOverallRank = toInt(row.Rank)
 
-          const existing = await tx.player.findUnique({
-            where: { fbgId: row.playerId },
+          const firstFbgRanking = await tx.playerRanking.findFirst({
+            where: {
+              player: { fbgId: row.playerId },
+              source: "fbg",
+              position: "overall",
+            },
+            orderBy: { importedAt: "asc" },
             select: { overallRank: true },
           })
           const fbgRankDelta =
-            existing?.overallRank != null && newOverallRank != null
-              ? existing.overallRank - newOverallRank
+            firstFbgRanking?.overallRank != null && newOverallRank != null
+              ? firstFbgRanking.overallRank - newOverallRank
               : null
 
           const rankFields = {
