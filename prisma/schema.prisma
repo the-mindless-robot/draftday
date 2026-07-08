@@ -75,7 +75,8 @@ model Player {
   overallTier    String? @map("overall_tier")
   positionalTier String? @map("positional_tier")
 
-  flagged Boolean @default(false)
+  flagged  Boolean @default(false)
+  targeted Boolean @default(false)
 
   // Rankings — stamped on overall import (no history)
   pos                String?

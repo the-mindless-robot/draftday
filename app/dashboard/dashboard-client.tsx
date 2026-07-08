@@ -45,6 +45,7 @@ type RankedPlayer = {
   fbgRankDelta: number | null
   espnRankDelta: number | null
   flagged: boolean
+  targeted: boolean
 }
 
 const FLEX_POS = ["WR", "RB", "TE"]
@@ -161,18 +162,63 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
   }, [selectedPlayer?.id])
 
   async function handleFlag(player: RankedPlayer) {
+    const wasFlagged = player.flagged
     setPlayers((prev) =>
-      prev.map((p) => (p.id === player.id ? { ...p, flagged: !p.flagged } : p))
+      prev.map((p) =>
+        p.id === player.id
+          ? { ...p, flagged: !wasFlagged, ...(wasFlagged && { targeted: false }) }
+          : p
+      )
     )
     if (selectedPlayer?.id === player.id) {
-      setSelectedPlayer((prev) => prev ? { ...prev, flagged: !prev.flagged } : null)
+      setSelectedPlayer((prev) =>
+        prev ? { ...prev, flagged: !wasFlagged, ...(wasFlagged && { targeted: false }) } : null
+      )
     }
     try {
       await fetch(`/api/players/${player.id}/flag`, { method: "PATCH" })
     } catch {
       setPlayers((prev) =>
-        prev.map((p) => (p.id === player.id ? { ...p, flagged: !p.flagged } : p))
+        prev.map((p) =>
+          p.id === player.id ? { ...p, flagged: wasFlagged, targeted: player.targeted } : p
+        )
       )
+      if (selectedPlayer?.id === player.id) {
+        setSelectedPlayer((prev) =>
+          prev ? { ...prev, flagged: wasFlagged, targeted: player.targeted } : null
+        )
+      }
+    }
+  }
+
+  async function handleTarget(player: RankedPlayer) {
+    const wasTargeted = player.targeted
+    const wasFlagged = player.flagged
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.id === player.id
+          ? { ...p, targeted: !wasTargeted, ...(!wasTargeted && { flagged: true }) }
+          : p
+      )
+    )
+    if (selectedPlayer?.id === player.id) {
+      setSelectedPlayer((prev) =>
+        prev ? { ...prev, targeted: !wasTargeted, ...(!wasTargeted && { flagged: true }) } : null
+      )
+    }
+    try {
+      await fetch(`/api/players/${player.id}/target`, { method: "PATCH" })
+    } catch {
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.id === player.id ? { ...p, targeted: wasTargeted, flagged: wasFlagged } : p
+        )
+      )
+      if (selectedPlayer?.id === player.id) {
+        setSelectedPlayer((prev) =>
+          prev ? { ...prev, targeted: wasTargeted, flagged: wasFlagged } : null
+        )
+      }
     }
   }
 
@@ -207,6 +253,7 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
             setRightPanel("details")
           }}
           onFlag={handleFlag}
+          onTarget={handleTarget}
         />
       </div>
       <div className="flex flex-col gap-3 w-96 shrink-0 overflow-y-auto">
@@ -267,6 +314,10 @@ export function DashboardClient({ players: initialPlayers }: { players: RankedPl
               onFlag={(id) => {
                 const p = players.find((pl) => pl.id === id)
                 if (p) handleFlag(p)
+              }}
+              onTarget={(id) => {
+                const p = players.find((pl) => pl.id === id)
+                if (p) handleTarget(p)
               }}
             />
           </div>

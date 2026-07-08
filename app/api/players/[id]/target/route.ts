@@ -9,7 +9,7 @@ export async function PATCH(
 
   const player = await prisma.player.findUnique({
     where: { id },
-    select: { flagged: true },
+    select: { targeted: true },
   })
 
   if (!player) return NextResponse.json({ error: "Not found" }, { status: 404 })
@@ -17,10 +17,10 @@ export async function PATCH(
   const updated = await prisma.player.update({
     where: { id },
     data: {
-      flagged: !player.flagged,
-      ...(player.flagged && { targeted: false }),
+      targeted: !player.targeted,
+      flagged: true,
     },
-    select: { flagged: true, targeted: true },
+    select: { targeted: true, flagged: true },
   })
 
   return NextResponse.json(updated)

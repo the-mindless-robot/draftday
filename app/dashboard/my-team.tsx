@@ -16,6 +16,7 @@ type RankedPlayer = {
   scFbg200: string | null
   scEspn200: string | null
   flagged: boolean
+  targeted: boolean
 }
 
 type RosterSlot = {

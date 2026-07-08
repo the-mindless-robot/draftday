@@ -10,7 +10,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Search, Star } from "lucide-react"
+import { Search, Star, Target } from "lucide-react"
 import { Fragment, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +32,7 @@ declare module "@tanstack/react-table" {
     maxDownside: number
     activePosition: string
     onFlag?: (player: RankedPlayer) => void
+    onTarget?: (player: RankedPlayer) => void
   }
 }
 
@@ -78,6 +79,7 @@ type RankedPlayer = {
   fbgRankDelta: number | null
   espnRankDelta: number | null
   flagged: boolean
+  targeted: boolean
 }
 
 function parseSalary(val: string | null): number | null {
@@ -155,17 +157,30 @@ const columns: ColumnDef<RankedPlayer>[] = [
     cell: ({ row, table }) => {
       const player = row.original
       return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            table.options.meta?.onFlag?.(player)
-          }}
-          className="flex items-center justify-center p-0.5 transition-opacity hover:opacity-80"
-        >
-          <Star
-            className={`h-3.5 w-3.5 ${player.flagged ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"}`}
-          />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              table.options.meta?.onFlag?.(player)
+            }}
+            className="flex items-center justify-center p-0.5 transition-opacity hover:opacity-80"
+          >
+            <Star
+              className={`h-3.5 w-3.5 ${player.flagged ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"}`}
+            />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              table.options.meta?.onTarget?.(player)
+            }}
+            className="flex items-center justify-center p-0.5 transition-opacity hover:opacity-80"
+          >
+            <Target
+              className={`h-3.5 w-3.5 ${player.targeted ? "fill-red-400 text-red-400" : "text-muted-foreground/40"}`}
+            />
+          </button>
+        </div>
       )
     },
   },
@@ -382,11 +397,13 @@ export function RankingsTable({
   selectedPlayerId,
   onPlayerSelect,
   onFlag,
+  onTarget,
 }: {
   players: RankedPlayer[]
   selectedPlayerId?: string
   onPlayerSelect?: (player: RankedPlayer) => void
   onFlag?: (player: RankedPlayer) => void
+  onTarget?: (player: RankedPlayer) => void
 }) {
   "use no memo"
   const [activePosition, setActivePosition] = useState<Position>("overall")
@@ -422,7 +439,7 @@ export function RankingsTable({
   const table = useReactTable({
     data,
     columns,
-    meta: { maxUpside, maxDownside, activePosition, onFlag },
+    meta: { maxUpside, maxDownside, activePosition, onFlag, onTarget },
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
