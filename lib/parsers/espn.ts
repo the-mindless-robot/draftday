@@ -1,11 +1,10 @@
-import { PDFParse } from "pdf-parse"
+import pdfParse from "pdf-parse"
 
 const entryRegex =
   /(\d{1,3})\.\s*\(([A-Z]+)(\d+)\)\s+(.+?),\s+([A-Z]{2,3}|FA)\s+\$(\d+)/g
 
 export async function parseESPN(buffer: Uint8Array) {
-  const parser = new PDFParse(buffer)
-  const data = await parser.getText()
+  const data = await pdfParse(Buffer.from(buffer))
 
   const rankingsByRank = new Map()
   let match

@@ -27,6 +27,43 @@ function splitPos(val: string | undefined): {
   return { pos: match[1], positionalRank: parseInt(match[2], 10) }
 }
 
+// Build a fbgId → initial overall rank map from existing PlayerRanking rows.
+async function fetchInitialFbgRanks(fbgIds: string[]): Promise<Map<string, number>> {
+  if (fbgIds.length === 0) return new Map()
+  const rankings = await prisma.playerRanking.findMany({
+    where: {
+      player: { fbgId: { in: fbgIds } },
+      source: "fbg",
+      position: "overall",
+    },
+    orderBy: { importedAt: "asc" },
+    select: { overallRank: true, player: { select: { fbgId: true } } },
+  })
+  const map = new Map<string, number>()
+  for (const r of rankings) {
+    if (!map.has(r.player.fbgId) && r.overallRank != null) {
+      map.set(r.player.fbgId, r.overallRank)
+    }
+  }
+  return map
+}
+
+// Build a playerId → initial overall rank map from existing ESPN PlayerRanking rows.
+async function fetchInitialEspnRanks(): Promise<Map<string, number>> {
+  const rankings = await prisma.playerRanking.findMany({
+    where: { source: "espn", position: "overall" },
+    orderBy: { importedAt: "asc" },
+    select: { playerId: true, overallRank: true },
+  })
+  const map = new Map<string, number>()
+  for (const r of rankings) {
+    if (!map.has(r.playerId) && r.overallRank != null) {
+      map.set(r.playerId, r.overallRank)
+    }
+  }
+  return map
+}
+
 export async function saveImport({
   rows,
   source,
@@ -40,6 +77,16 @@ export async function saveImport({
   budget: 200 | 250
   season: number
 }): Promise<{ importId: string; saved: number }> {
+  // Pre-fetch initial rankings outside the transaction — one bulk query instead
+  // of one findFirst per row inside the transaction (which caused timeouts).
+  const fbgIds = source === "fbg" && position === "overall"
+    ? rows.map((r) => r.playerId).filter(Boolean)
+    : []
+  const [initialFbgRanks, initialEspnRanks] = await Promise.all([
+    fetchInitialFbgRanks(fbgIds),
+    source === "espn" ? fetchInitialEspnRanks() : Promise.resolve(new Map<string, number>()),
+  ])
+
   return prisma.$transaction(
     async (tx) => {
       const { id: importId, importedAt } = await tx.rankingImport.create({
@@ -108,14 +155,10 @@ export async function saveImport({
           }
 
           const newEspnOverallRank = Number(row.rank) || null
-          const firstEspnRanking = await tx.playerRanking.findFirst({
-            where: { playerId: player.id, source: "espn", position: "overall" },
-            orderBy: { importedAt: "asc" },
-            select: { overallRank: true },
-          })
+          const initialEspnRank = initialEspnRanks.get(player.id) ?? null
           const espnRankDelta =
-            firstEspnRanking?.overallRank != null && newEspnOverallRank != null
-              ? firstEspnRanking.overallRank - newEspnOverallRank
+            initialEspnRank != null && newEspnOverallRank != null
+              ? initialEspnRank - newEspnOverallRank
               : null
 
           await tx.player.update({
@@ -159,18 +202,10 @@ export async function saveImport({
           const { pos, positionalRank } = splitPos(row.Pos)
           const newOverallRank = toInt(row.Rank)
 
-          const firstFbgRanking = await tx.playerRanking.findFirst({
-            where: {
-              player: { fbgId: row.playerId },
-              source: "fbg",
-              position: "overall",
-            },
-            orderBy: { importedAt: "asc" },
-            select: { overallRank: true },
-          })
+          const initialFbgRank = initialFbgRanks.get(row.playerId) ?? null
           const fbgRankDelta =
-            firstFbgRanking?.overallRank != null && newOverallRank != null
-              ? firstFbgRanking.overallRank - newOverallRank
+            initialFbgRank != null && newOverallRank != null
+              ? initialFbgRank - newOverallRank
               : null
 
           const rankFields = {
@@ -241,8 +276,6 @@ export async function saveImport({
         saved++
       }
 
-      // Evict stale overall data for players absent from this import so stale
-      // ranks and tiers don't pollute ordering and tier dividers in the dashboard.
       if (source === "fbg" && position === "overall" && importedFbgIds.length > 0) {
         await tx.player.updateMany({
           where: {
