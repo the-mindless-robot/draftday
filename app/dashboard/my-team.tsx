@@ -106,12 +106,12 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
   useEffect(() => { fetchSnapshots() }, [fetchSnapshots])
 
   const suggestions = useMemo(() => {
-    const myList = players.filter((p) => p.flagged)
+    const targeted = players.filter((p) => p.targeted)
+    const watching = players.filter((p) => p.flagged && !p.targeted)
     const used = new Set<string>()
 
-    return ROSTER_SLOTS.map((slot, i) => {
-      const budget = budgets[i] ?? slot.budget
-      const pick = myList
+    function bestFit(pool: RankedPlayer[], slot: RosterSlot, budget: number): RankedPlayer | null {
+      return pool
         .filter((p) => {
           if (used.has(p.id) || !p.pos || !slot.positions.includes(p.pos)) return false
           const salary = fbgAvg(p)
@@ -122,6 +122,14 @@ export function MyTeam({ players }: { players: RankedPlayer[] }) {
           const bVal = fbgAvg(b) ?? 0
           return Math.abs(budget - aVal) - Math.abs(budget - bVal)
         })[0] ?? null
+    }
+
+    return ROSTER_SLOTS.map((slot, i) => {
+      const budget = budgets[i] ?? slot.budget
+      const pick =
+        bestFit(targeted, slot, budget) ??
+        bestFit(watching, slot, budget) ??
+        bestFit(players, slot, budget)
 
       if (pick) used.add(pick.id)
       return pick

@@ -11,8 +11,24 @@ type RankedPlayer = {
   pos: string | null
   positionalRank: number | null
   overallRank: number | null
+  scFbg250: string | null
+  scFbg200: string | null
+  scEspn200: string | null
   flagged: boolean
   targeted: boolean
+}
+
+function parseSalary(val: string | null): number | null {
+  if (!val) return null
+  const n = parseFloat(val.replace(/[^0-9.]/g, ""))
+  return isNaN(n) ? null : n
+}
+
+function fbgAvg(p: RankedPlayer): number | null {
+  const a = parseSalary(p.scFbg250)
+  const b = parseSalary(p.scFbg200)
+  if (a != null && b != null) return (a + b) / 2
+  return a ?? b
 }
 
 const POS_ORDER = ["QB", "RB", "WR", "TE", "K", "PK"]
@@ -64,6 +80,12 @@ function PlayerRow({
       </a>
       <span className="shrink-0 font-mono text-muted-foreground">
         #{player.overallRank ?? "—"}
+      </span>
+      <span className="w-8 shrink-0 text-right font-mono text-muted-foreground">
+        {(() => { const v = fbgAvg(player); return v != null ? `$${v.toFixed(0)}` : "—" })()}
+      </span>
+      <span className="w-8 shrink-0 text-right font-mono text-muted-foreground/60">
+        {(() => { const b = parseSalary(player.scEspn200); return b != null ? `$${Math.round(b * 1.25)}` : "—" })()}
       </span>
       <button
         onClick={(e) => { e.stopPropagation(); onTarget?.(player.id) }}
