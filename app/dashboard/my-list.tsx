@@ -16,6 +16,7 @@ type RankedPlayer = {
   scEspn200: string | null
   flagged: boolean
   targeted: boolean
+  draftPick: { id: string; salary: number; team: { isMyTeam: boolean } } | null
 }
 
 function parseSalary(val: string | null): number | null {
@@ -60,9 +61,12 @@ function PlayerRow({
   onFlag?: (id: string) => void
   onTarget?: (id: string) => void
 }) {
+  const isDrafted = player.draftPick !== null
+  const isMyPick = player.draftPick?.team.isMyTeam ?? false
+
   return (
     <div
-      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/50"
+      className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/50 ${isMyPick ? "bg-primary/8 opacity-70" : isDrafted ? "opacity-30" : ""}`}
       onClick={() => onPlayerSelect?.(player)}
     >
       <span className={`w-8 shrink-0 font-mono font-semibold ${posColor(player.pos)}`}>
@@ -78,6 +82,11 @@ function PlayerRow({
         {player.name}
         {player.team ? <span className="text-muted-foreground"> {player.team}</span> : null}
       </a>
+      {isMyPick && (
+        <span className="shrink-0 rounded bg-primary/15 px-1 py-0.5 font-mono text-[9px] font-bold text-primary leading-none">
+          DRAFTED
+        </span>
+      )}
       <span className="shrink-0 font-mono text-muted-foreground">
         #{player.overallRank ?? "—"}
       </span>

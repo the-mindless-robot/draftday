@@ -82,17 +82,29 @@ function fbgAvg(p: RankedPlayer): number | null {
 
 function posColor(pos: string | null): string {
   switch (pos?.toUpperCase()) {
-    case "QB": return "text-blue-400"
-    case "RB": return "text-green-400"
-    case "WR": return "text-yellow-400"
-    case "TE": return "text-orange-400"
+    case "QB":
+      return "text-blue-400"
+    case "RB":
+      return "text-green-400"
+    case "WR":
+      return "text-yellow-400"
+    case "TE":
+      return "text-orange-400"
     case "K":
-    case "PK": return "text-purple-400"
-    default: return "text-muted-foreground"
+    case "PK":
+      return "text-purple-400"
+    default:
+      return "text-muted-foreground"
   }
 }
 
-function SimilarPlayers({ label, players }: { label: string; players: RankedPlayer[] }) {
+function SimilarPlayers({
+  label,
+  players,
+}: {
+  label: string
+  players: RankedPlayer[]
+}) {
   if (players.length === 0) return null
   return (
     <div className="rounded-xl bg-muted/50 p-3">
@@ -104,8 +116,11 @@ function SimilarPlayers({ label, players }: { label: string; players: RankedPlay
           const avg = fbgAvg(p)
           return (
             <div key={p.id} className="flex items-center gap-2 text-xs">
-              <span className={`w-10 shrink-0 font-mono font-semibold ${posColor(p.pos)}`}>
-                {p.pos}{p.positionalRank ?? ""}
+              <span
+                className={`w-10 shrink-0 font-mono font-semibold ${posColor(p.pos)}`}
+              >
+                {p.pos}
+                {p.positionalRank ?? ""}
               </span>
               <a
                 href={fbgPlayerUrl(p.name, p.fbgId)}
@@ -114,7 +129,9 @@ function SimilarPlayers({ label, players }: { label: string; players: RankedPlay
                 className="min-w-0 flex-1 truncate font-medium hover:underline"
               >
                 {p.name}
-                {p.team ? <span className="text-muted-foreground"> {p.team}</span> : null}
+                {p.team ? (
+                  <span className="text-muted-foreground"> {p.team}</span>
+                ) : null}
               </a>
               <span className="shrink-0 font-mono text-muted-foreground">
                 #{p.overallRank ?? "—"}
@@ -135,7 +152,7 @@ function getSimilar(
   allPlayers: RankedPlayer[],
   positions: string[],
   excludeIds: Set<string>,
-  count = 3,
+  count = 3
 ): RankedPlayer[] {
   const rank = selected.overallRank ?? 999
   return allPlayers
@@ -144,12 +161,12 @@ function getSimilar(
         p.id !== selected.id &&
         !excludeIds.has(p.id) &&
         p.pos != null &&
-        positions.includes(p.pos),
+        positions.includes(p.pos)
     )
     .sort(
       (a, b) =>
         Math.abs((a.overallRank ?? 999) - rank) -
-        Math.abs((b.overallRank ?? 999) - rank),
+        Math.abs((b.overallRank ?? 999) - rank)
     )
     .slice(0, count)
 }
@@ -191,19 +208,25 @@ function DraftForm({
       </p>
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <label className="w-12 shrink-0 text-[11px] text-muted-foreground">Team</label>
+          <label className="w-12 shrink-0 text-[11px] text-muted-foreground">
+            Team
+          </label>
           <select
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
             className="flex-1 rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
           >
             {draftTeams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
             ))}
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="w-12 shrink-0 text-[11px] text-muted-foreground">Salary</label>
+          <label className="w-12 shrink-0 text-[11px] text-muted-foreground">
+            Salary
+          </label>
           <div className="flex items-center gap-1">
             <span className="font-mono text-xs text-muted-foreground">$</span>
             <input
@@ -244,13 +267,24 @@ export function DashboardClient({
 }) {
   const [players, setPlayers] = useState(initialPlayers)
   const [draftTeams, setDraftTeams] = useState(initialDraftTeams)
-  const [selectedPlayer, setSelectedPlayer] = useState<RankedPlayer | null>(null)
-  const [rankingHistory, setRankingHistory] = useState<RankingHistory | null>(null)
-  const [rightPanel, setRightPanel] = useState<"details" | "my-list" | "my-team" | "picks">("details")
-  const [draftingPlayer, setDraftingPlayer] = useState<RankedPlayer | null>(null)
+  const [selectedPlayer, setSelectedPlayer] = useState<RankedPlayer | null>(
+    null
+  )
+  const [rankingHistory, setRankingHistory] = useState<RankingHistory | null>(
+    null
+  )
+  const [rightPanel, setRightPanel] = useState<
+    "details" | "my-list" | "my-team" | "picks"
+  >("details")
+  const [draftingPlayer, setDraftingPlayer] = useState<RankedPlayer | null>(
+    null
+  )
 
   useEffect(() => {
-    if (!selectedPlayer) { setRankingHistory(null); return }
+    if (!selectedPlayer) {
+      setRankingHistory(null)
+      return
+    }
     fetch(`/api/players/${selectedPlayer.id}/rankings/history`)
       .then((r) => r.json())
       .then(setRankingHistory)
@@ -277,29 +311,39 @@ export function DashboardClient({
         pos: draftingPlayer.pos,
       }),
     })
-    const pick = await res.json() as DraftPickInfo
+    const pick = (await res.json()) as DraftPickInfo
     setPlayers((prev) =>
-      prev.map((p) => (p.id === draftingPlayer.id ? { ...p, draftPick: pick } : p))
+      prev.map((p) =>
+        p.id === draftingPlayer.id ? { ...p, draftPick: pick } : p
+      )
     )
     setDraftingPlayer(null)
   }
 
-  async function handleEditPick(pickId: string, teamId: string, salary: number) {
+  async function handleEditPick(
+    pickId: string,
+    teamId: string,
+    salary: number
+  ) {
     const res = await fetch(`/api/draft/picks/${pickId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ teamId, salary }),
     })
-    const updated = await res.json() as DraftPickInfo
+    const updated = (await res.json()) as DraftPickInfo
     setPlayers((prev) =>
-      prev.map((p) => (p.draftPick?.id === pickId ? { ...p, draftPick: updated } : p))
+      prev.map((p) =>
+        p.draftPick?.id === pickId ? { ...p, draftPick: updated } : p
+      )
     )
   }
 
   async function handleDeletePick(pickId: string) {
     await fetch(`/api/draft/picks/${pickId}`, { method: "DELETE" })
     setPlayers((prev) =>
-      prev.map((p) => (p.draftPick?.id === pickId ? { ...p, draftPick: null } : p))
+      prev.map((p) =>
+        p.draftPick?.id === pickId ? { ...p, draftPick: null } : p
+      )
     )
   }
 
@@ -310,13 +354,23 @@ export function DashboardClient({
     setPlayers((prev) =>
       prev.map((p) =>
         p.id === player.id
-          ? { ...p, flagged: !wasFlagged, ...(wasFlagged && { targeted: false }) }
+          ? {
+              ...p,
+              flagged: !wasFlagged,
+              ...(wasFlagged && { targeted: false }),
+            }
           : p
       )
     )
     if (selectedPlayer?.id === player.id) {
       setSelectedPlayer((prev) =>
-        prev ? { ...prev, flagged: !wasFlagged, ...(wasFlagged && { targeted: false }) } : null
+        prev
+          ? {
+              ...prev,
+              flagged: !wasFlagged,
+              ...(wasFlagged && { targeted: false }),
+            }
+          : null
       )
     }
     try {
@@ -324,7 +378,9 @@ export function DashboardClient({
     } catch {
       setPlayers((prev) =>
         prev.map((p) =>
-          p.id === player.id ? { ...p, flagged: wasFlagged, targeted: player.targeted } : p
+          p.id === player.id
+            ? { ...p, flagged: wasFlagged, targeted: player.targeted }
+            : p
         )
       )
     }
@@ -336,13 +392,23 @@ export function DashboardClient({
     setPlayers((prev) =>
       prev.map((p) =>
         p.id === player.id
-          ? { ...p, targeted: !wasTargeted, ...(!wasTargeted && { flagged: true }) }
+          ? {
+              ...p,
+              targeted: !wasTargeted,
+              ...(!wasTargeted && { flagged: true }),
+            }
           : p
       )
     )
     if (selectedPlayer?.id === player.id) {
       setSelectedPlayer((prev) =>
-        prev ? { ...prev, targeted: !wasTargeted, ...(!wasTargeted && { flagged: true }) } : null
+        prev
+          ? {
+              ...prev,
+              targeted: !wasTargeted,
+              ...(!wasTargeted && { flagged: true }),
+            }
+          : null
       )
     }
     try {
@@ -350,7 +416,9 @@ export function DashboardClient({
     } catch {
       setPlayers((prev) =>
         prev.map((p) =>
-          p.id === player.id ? { ...p, targeted: wasTargeted, flagged: wasFlagged } : p
+          p.id === player.id
+            ? { ...p, targeted: wasTargeted, flagged: wasFlagged }
+            : p
         )
       )
     }
@@ -364,7 +432,10 @@ export function DashboardClient({
   )
 
   const draftedPlayers = useMemo(
-    () => players.filter((p) => p.draftPick !== null) as (RankedPlayer & { draftPick: DraftPickInfo })[],
+    () =>
+      players.filter((p) => p.draftPick !== null) as (RankedPlayer & {
+        draftPick: DraftPickInfo
+      })[],
     [players]
   )
 
@@ -382,7 +453,7 @@ export function DashboardClient({
         selectedPlayer,
         players,
         FLEX_POS.filter((pos) => pos !== selectedPlayer.pos),
-        new Set(positionalComps.map((p) => p.id)),
+        new Set(positionalComps.map((p) => p.id))
       )
     : []
 
@@ -390,8 +461,8 @@ export function DashboardClient({
   const picksCount = draftedPlayers.length
 
   return (
-    <div className="flex flex-1 gap-4 p-4 h-full overflow-hidden">
-      <div className="flex flex-1 flex-col rounded-xl bg-muted/50 p-4 overflow-hidden">
+    <div className="flex h-full flex-1 gap-4 overflow-hidden p-4">
+      <div className="flex flex-1 flex-col overflow-hidden rounded-xl bg-muted/50 p-4">
         <RankingsTable
           players={players}
           selectedPlayerId={selectedPlayer?.id}
@@ -404,14 +475,14 @@ export function DashboardClient({
           onDraft={handleDraftClick}
         />
       </div>
-      <div className="flex flex-col gap-3 w-96 shrink-0 overflow-y-auto">
-        <div className="flex-1 rounded-xl bg-muted/50 p-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex rounded-md bg-muted p-0.5 gap-0.5">
+      <div className="flex w-96 shrink-0 flex-col gap-3 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto rounded-xl bg-muted/50 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
               <button
                 onClick={() => setRightPanel("details")}
                 title="Details"
-                className={`relative flex min-w-8 items-center justify-center rounded p-1.5 transition-colors ${
+                className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
                   rightPanel === "details"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -422,7 +493,7 @@ export function DashboardClient({
               <button
                 onClick={() => setRightPanel("my-list")}
                 title="My List"
-                className={`relative flex min-w-8 items-center justify-center rounded p-1.5 transition-colors ${
+                className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
                   rightPanel === "my-list"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -430,7 +501,7 @@ export function DashboardClient({
               >
                 <Star className="h-3.5 w-3.5" />
                 {flaggedCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-yellow-400 text-[8px] font-bold text-black leading-none">
+                  <span className="absolute top-0.5 right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-yellow-400 px-0.5 py-px text-[8px] font-bold leading-none text-black">
                     {flaggedCount}
                   </span>
                 )}
@@ -438,7 +509,7 @@ export function DashboardClient({
               <button
                 onClick={() => setRightPanel("my-team")}
                 title="My Team"
-                className={`relative flex min-w-8 items-center justify-center rounded p-1.5 transition-colors ${
+                className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
                   rightPanel === "my-team"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -449,7 +520,7 @@ export function DashboardClient({
               <button
                 onClick={() => setRightPanel("picks")}
                 title="Picks"
-                className={`relative flex min-w-8 items-center justify-center rounded p-1.5 transition-colors ${
+                className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
                   rightPanel === "picks"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -457,7 +528,7 @@ export function DashboardClient({
               >
                 <ListChecks className="h-3.5 w-3.5" />
                 {picksCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground leading-none">
+                  <span className="absolute top-0.5 right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 py-px text-[8px] font-bold leading-none text-primary-foreground">
                     {picksCount}
                   </span>
                 )}
@@ -513,7 +584,11 @@ export function DashboardClient({
         {rightPanel === "details" && selectedPlayer && (
           <>
             <SimilarPlayers
-              label={selectedPlayer ? `Similar ${selectedPlayer.pos ?? ""}s` : "Positional comps"}
+              label={
+                selectedPlayer
+                  ? `Similar ${selectedPlayer.pos ?? ""}s`
+                  : "Positional comps"
+              }
               players={positionalComps}
             />
             <SimilarPlayers label="Flex comps" players={flexComps} />
