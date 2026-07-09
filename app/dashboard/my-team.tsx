@@ -70,13 +70,6 @@ const POS_SLOT_ORDER: Record<string, number[]> = {
   TD:  [8], DST: [8],
 }
 
-const SKIP_SLOTS = new Set([8, 9])
-
-// Surplus priority: WR → RB → FLEX → FLEX → TE → QB → BENCH
-const SURPLUS_ORDER = [3, 4, 1, 2, 6, 7, 5, 0, 10, 11, 12, 13, 14, 15]
-// Deficit priority: BENCH → QB → TE → FLEX → FLEX → RB → WR
-const DEFICIT_ORDER = [15, 14, 13, 12, 11, 10, 0, 5, 7, 6, 2, 1, 4, 3]
-
 const DEFAULT_BUDGETS = ROSTER_SLOTS.map((s) => s.budget)
 
 function assignPicks(picks: MyPick[]): (MyPick | null)[] {
@@ -93,35 +86,6 @@ function assignPicks(picks: MyPick[]): (MyPick | null)[] {
   return assigned
 }
 
-function redistributeBudget(
-  base: number[],
-  assigned: (MyPick | null)[]
-): number[] {
-  const budgets = [...base]
-  let surplus = 0
-  for (let i = 0; i < ROSTER_SLOTS.length; i++) {
-    if (SKIP_SLOTS.has(i) || !assigned[i]) continue
-    surplus += budgets[i] - assigned[i]!.draftPick.salary
-    budgets[i] = assigned[i]!.draftPick.salary
-  }
-  if (surplus === 0) return budgets
-  const order = surplus > 0 ? SURPLUS_ORDER : DEFICIT_ORDER
-  const empty = order.filter((i) => !SKIP_SLOTS.has(i) && !assigned[i])
-  if (empty.length === 0) return budgets
-  const abs = Math.abs(surplus)
-  const perSlot = Math.floor(abs / empty.length)
-  const extra = abs % empty.length
-  for (let j = 0; j < empty.length; j++) {
-    const delta = perSlot + (j < extra ? 1 : 0)
-    if (surplus > 0) {
-      budgets[empty[j]] += delta
-    } else {
-      budgets[empty[j]] = Math.max(1, budgets[empty[j]] - delta)
-    }
-  }
-  return budgets
-}
-
 const SUFFIXES = /\s+(Jr\.?|Sr\.?|II|III|IV|V)$/i
 
 function lastName(player: RankedPlayer | null): string {
@@ -130,11 +94,11 @@ function lastName(player: RankedPlayer | null): string {
   return (stripped.split(" ").pop() ?? stripped).toLowerCase()
 }
 
-function buildStem(suggestions: (RankedPlayer | null)[]): string {
-  const qb   = lastName(suggestions[0])
-  const rb   = lastName(suggestions[1])
-  const wr   = lastName(suggestions[3])
-  const flex = lastName(suggestions[6])
+function buildStem(slots: (RankedPlayer | null)[]): string {
+  const qb   = lastName(slots[0])
+  const rb   = lastName(slots[1])
+  const wr   = lastName(slots[3])
+  const flex = lastName(slots[6])
   return `${qb}-${wr}-${rb}-${flex}`
 }
 
@@ -175,10 +139,6 @@ export function MyTeam({
   const [snapshots, setSnapshots] = useState<TeamSnapshot[]>([])
   const [saving, setSaving] = useState(false)
   const [maxOver, setMaxOver] = useState(5)
-
-  useEffect(() => {
-    setBudgets(redistributeBudget(DEFAULT_BUDGETS, assignedSlots))
-  }, [assignedSlots])
 
   const fetchSnapshots = useCallback(async () => {
     const res = await fetch("/api/team-snapshots")
@@ -245,8 +205,19 @@ export function MyTeam({
     setBudgets(snapshot.budgets as number[])
   }
 
-  const totalSpent = myTeamPicks.reduce((sum, p) => sum + p.draftPick.salary, 0)
-  const remaining = 250 - totalSpent
+  // Actual money spent on real picks
+  const spent = myTeamPicks.reduce((sum, p) => sum + p.draftPick.salary, 0)
+  const remaining = 250 - spent
+
+  // Sum of budget inputs for all empty slots (planning total)
+  const planned = ROSTER_SLOTS.reduce((sum, _, i) => {
+    if (assignedSlots[i]) return sum
+    return sum + (budgets[i] ?? ROSTER_SLOTS[i].budget)
+  }, 0)
+
+  const slack = remaining - planned
+  const overPlanned = slack < 0
+
   const myListCount = players.filter((p) => p.flagged).length
   const hasContent = myListCount > 0 || myTeamPicks.length > 0
 
@@ -264,21 +235,32 @@ export function MyTeam({
   return (
     <div className="flex flex-col">
       {/* Budget summary */}
-      <div className="mb-2 flex items-center justify-between rounded-md bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">
-        <span>Spent</span>
-        <span className="flex items-center gap-2 font-mono">
-          ${totalSpent} / $250
-          {totalSpent > 0 && (
-            <span className="text-muted-foreground/60">({remaining} left)</span>
-          )}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="ml-1 rounded border border-border bg-background px-2 py-0.5 font-sans text-[10px] font-semibold text-foreground transition-opacity hover:opacity-80 disabled:opacity-40"
-          >
-            {saving ? "Saving…" : "Save"}
-          </button>
-        </span>
+      <div className="mb-2 rounded-md bg-muted px-2.5 py-2 text-[11px]">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-muted-foreground">Spent</span>
+          <span className="flex items-center gap-2 font-mono font-semibold">
+            <span>${spent} / $250</span>
+            <span className="text-muted-foreground/60">${remaining} left</span>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="rounded border border-border bg-background px-2 py-0.5 font-sans text-[10px] font-semibold text-foreground transition-opacity hover:opacity-80 disabled:opacity-40"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </span>
+        </div>
+        <div className="mt-1 flex items-center justify-between border-t border-border/30 pt-1">
+          <span className="font-semibold text-muted-foreground">Planned</span>
+          <span className={`font-mono font-semibold ${overPlanned ? "text-red-400" : "text-muted-foreground/70"}`}>
+            ${planned} for {ROSTER_SLOTS.length - myTeamPicks.length} slots
+            {overPlanned
+              ? ` · over by $${Math.abs(slack)}`
+              : slack > 0
+                ? ` · $${slack} slack`
+                : null}
+          </span>
+        </div>
       </div>
 
       {/* Leniency control */}
@@ -315,7 +297,7 @@ export function MyTeam({
         return (
           <div
             key={`${slot.label}-${i}`}
-            className={`flex items-center gap-2 border-b border-border/10 py-1.5 last:border-0 ${actual ? "opacity-100" : ""}`}
+            className="flex items-center gap-2 border-b border-border/10 py-1.5 last:border-0"
           >
             {/* Slot badge */}
             <span
@@ -324,7 +306,7 @@ export function MyTeam({
               {slot.label}
             </span>
 
-            {/* Budget / salary */}
+            {/* Budget input (empty) or salary paid (drafted) */}
             <div className="flex w-9 shrink-0 items-center gap-0.5">
               {actual ? (
                 <span className="w-full text-right font-mono text-[11px] font-semibold text-primary">
