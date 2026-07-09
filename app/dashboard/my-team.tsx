@@ -43,31 +43,33 @@ type TeamSnapshot = {
 }
 
 const ROSTER_SLOTS: RosterSlot[] = [
-  { label: "QB",    budget: 25, positions: ["QB"] },
-  { label: "RB",    budget: 40, positions: ["RB"] },
-  { label: "RB",    budget: 28, positions: ["RB"] },
-  { label: "WR",    budget: 40, positions: ["WR"] },
-  { label: "WR",    budget: 28, positions: ["WR"] },
-  { label: "TE",    budget: 32, positions: ["TE"] },
-  { label: "FLEX",  budget: 20, positions: ["RB", "WR", "TE"] },
-  { label: "FLEX",  budget: 13, positions: ["RB", "WR", "TE"] },
-  { label: "TD",    budget:  5, positions: ["TD"] },
-  { label: "PK",    budget:  1, positions: ["PK"] },
-  { label: "BENCH", budget:  5, positions: ["RB", "WR", "TE"] },
-  { label: "BENCH", budget:  4, positions: ["RB", "WR", "TE"] },
-  { label: "BENCH", budget:  4, positions: ["RB", "WR", "TE"] },
-  { label: "BENCH", budget:  3, positions: ["RB", "WR", "TE"] },
-  { label: "BENCH", budget:  1, positions: ["RB", "WR", "TE"] },
-  { label: "BENCH", budget:  1, positions: ["RB", "WR", "TE"] },
+  { label: "QB", budget: 25, positions: ["QB"] },
+  { label: "RB", budget: 40, positions: ["RB"] },
+  { label: "RB", budget: 28, positions: ["RB"] },
+  { label: "WR", budget: 40, positions: ["WR"] },
+  { label: "WR", budget: 28, positions: ["WR"] },
+  { label: "TE", budget: 32, positions: ["TE"] },
+  { label: "FLEX", budget: 20, positions: ["RB", "WR", "TE"] },
+  { label: "FLEX", budget: 13, positions: ["RB", "WR", "TE"] },
+  { label: "TD", budget: 5, positions: ["TD"] },
+  { label: "PK", budget: 1, positions: ["PK"] },
+  { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 3, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
 ]
 
 const POS_SLOT_ORDER: Record<string, number[]> = {
-  QB:  [0],
-  RB:  [1, 2, 6, 7, 10, 11, 12, 13, 14, 15],
-  WR:  [3, 4, 6, 7, 10, 11, 12, 13, 14, 15],
-  TE:  [5, 6, 7, 10, 11, 12, 13, 14, 15],
-  K:   [9], PK: [9],
-  TD:  [8], DST: [8],
+  QB: [0],
+  RB: [1, 2, 6, 7, 10, 11, 12, 13, 14, 15],
+  WR: [3, 4, 6, 7, 10, 11, 12, 13, 14, 15],
+  TE: [5, 6, 7, 10, 11, 12, 13, 14, 15],
+  K: [9],
+  PK: [9],
+  TD: [8],
+  DST: [8],
 }
 
 const DEFAULT_BUDGETS = ROSTER_SLOTS.map((s) => s.budget)
@@ -80,7 +82,10 @@ function assignPicks(picks: MyPick[]): (MyPick | null)[] {
   for (const pick of sorted) {
     const pos = pick.pos?.toUpperCase() ?? ""
     for (const idx of POS_SLOT_ORDER[pos] ?? []) {
-      if (!assigned[idx]) { assigned[idx] = pick; break }
+      if (!assigned[idx]) {
+        assigned[idx] = pick
+        break
+      }
     }
   }
   return assigned
@@ -95,21 +100,21 @@ function lastName(player: RankedPlayer | null): string {
 }
 
 function buildStem(slots: (RankedPlayer | null)[]): string {
-  const qb   = lastName(slots[0])
-  const rb   = lastName(slots[1])
-  const wr   = lastName(slots[3])
+  const qb = lastName(slots[0])
+  const rb = lastName(slots[1])
+  const wr = lastName(slots[3])
   const flex = lastName(slots[6])
   return `${qb}-${wr}-${rb}-${flex}`
 }
 
 const POS_COLORS: Record<string, { text: string; border: string }> = {
-  QB:    { text: "text-blue-400",         border: "border-blue-400/30" },
-  RB:    { text: "text-green-400",        border: "border-green-400/30" },
-  WR:    { text: "text-yellow-400",       border: "border-yellow-400/30" },
-  TE:    { text: "text-orange-400",       border: "border-orange-400/30" },
-  FLEX:  { text: "text-pink-400",         border: "border-pink-400/30" },
-  TD:    { text: "text-cyan-400",         border: "border-cyan-400/30" },
-  PK:    { text: "text-purple-400",       border: "border-purple-400/30" },
+  QB: { text: "text-blue-400", border: "border-blue-400/30" },
+  RB: { text: "text-green-400", border: "border-green-400/30" },
+  WR: { text: "text-yellow-400", border: "border-yellow-400/30" },
+  TE: { text: "text-orange-400", border: "border-orange-400/30" },
+  FLEX: { text: "text-pink-400", border: "border-pink-400/30" },
+  TD: { text: "text-cyan-400", border: "border-cyan-400/30" },
+  PK: { text: "text-purple-400", border: "border-purple-400/30" },
   BENCH: { text: "text-muted-foreground", border: "border-border/40" },
 }
 
@@ -145,27 +150,38 @@ export function MyTeam({
     if (res.ok) setSnapshots(await res.json())
   }, [])
 
-  useEffect(() => { fetchSnapshots() }, [fetchSnapshots])
+  useEffect(() => {
+    fetchSnapshots()
+  }, [fetchSnapshots])
 
   const suggestions = useMemo(() => {
     const draftedIds = new Set(myTeamPicks.map((p) => p.id))
     const targeted = players.filter((p) => p.targeted && !p.draftPick)
-    const watching = players.filter((p) => p.flagged && !p.targeted && !p.draftPick)
+    const watching = players.filter(
+      (p) => p.flagged && !p.targeted && !p.draftPick
+    )
     const available = players.filter((p) => !p.draftPick)
     const used = new Set<string>(draftedIds)
 
-    function bestFit(pool: RankedPlayer[], slot: RosterSlot, budget: number): RankedPlayer | null {
-      return pool
-        .filter((p) => {
-          if (used.has(p.id) || !p.pos || !slot.positions.includes(p.pos)) return false
-          const salary = fbgAvg(p)
-          return salary === null || salary <= budget + maxOver
-        })
-        .sort((a, b) => {
-          const aVal = fbgAvg(a) ?? 0
-          const bVal = fbgAvg(b) ?? 0
-          return Math.abs(budget - aVal) - Math.abs(budget - bVal)
-        })[0] ?? null
+    function bestFit(
+      pool: RankedPlayer[],
+      slot: RosterSlot,
+      budget: number
+    ): RankedPlayer | null {
+      return (
+        pool
+          .filter((p) => {
+            if (used.has(p.id) || !p.pos || !slot.positions.includes(p.pos))
+              return false
+            const salary = fbgAvg(p)
+            return salary === null || salary <= budget + maxOver
+          })
+          .sort((a, b) => {
+            const aVal = fbgAvg(a) ?? 0
+            const bVal = fbgAvg(b) ?? 0
+            return Math.abs(budget - aVal) - Math.abs(budget - bVal)
+          })[0] ?? null
+      )
     }
 
     return ROSTER_SLOTS.map((slot, i) => {
@@ -183,7 +199,9 @@ export function MyTeam({
   async function handleSave() {
     setSaving(true)
     try {
-      const displaySlots = ROSTER_SLOTS.map((_, i) => assignedSlots[i] ?? suggestions[i])
+      const displaySlots = ROSTER_SLOTS.map(
+        (_, i) => assignedSlots[i] ?? suggestions[i]
+      )
       const stem = buildStem(displaySlots)
       await fetch("/api/team-snapshots", {
         method: "POST",
@@ -224,7 +242,9 @@ export function MyTeam({
   if (!hasContent) {
     return (
       <div className="flex flex-col items-center justify-center gap-1.5 py-10 text-center">
-        <p className="text-xs font-medium text-muted-foreground">No players on My List</p>
+        <p className="text-xs font-medium text-muted-foreground">
+          No players on My List
+        </p>
         <p className="text-[11px] text-muted-foreground/60">
           Star players in the rankings to see suggestions here.
         </p>
@@ -252,7 +272,9 @@ export function MyTeam({
         </div>
         <div className="mt-1 flex items-center justify-between border-t border-border/30 pt-1">
           <span className="font-semibold text-muted-foreground">Planned</span>
-          <span className={`font-mono font-semibold ${overPlanned ? "text-red-400" : "text-muted-foreground/70"}`}>
+          <span
+            className={`font-mono font-semibold ${overPlanned ? "text-red-400" : "text-muted-foreground/70"}`}
+          >
             ${planned} for {ROSTER_SLOTS.length - myTeamPicks.length} slots
             {overPlanned
               ? ` · over by $${Math.abs(slack)}`
@@ -314,7 +336,9 @@ export function MyTeam({
                 </span>
               ) : (
                 <>
-                  <span className="font-mono text-[11px] text-muted-foreground">$</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    $
+                  </span>
                   <input
                     type="number"
                     min={1}
@@ -338,26 +362,31 @@ export function MyTeam({
               {player ? (
                 <>
                   <div className="flex min-w-0 items-baseline gap-1">
-                    <span className={`shrink-0 font-mono text-[10px] font-semibold ${colors.text}`}>
-                      {player.pos}{player.positionalRank ?? ""}
+                    <span
+                      className={`shrink-0 font-mono text-[10px] font-semibold ${colors.text}`}
+                    >
+                      {player.pos}
+                      {player.positionalRank ?? ""}
                     </span>
                     <a
                       href={fbgPlayerUrl(player.name, player.fbgId)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="truncate text-[11px] font-medium leading-tight hover:underline"
+                      className="truncate text-[11px] leading-tight font-medium hover:underline"
                     >
                       {player.name}
                     </a>
-                    {actual && (
-                      <span className="shrink-0 rounded bg-primary/15 px-1 py-0.5 font-mono text-[9px] font-bold text-primary leading-none">
-                        DRAFTED
-                      </span>
-                    )}
                   </div>
                   {(player.team || player.positionalTier) && (
                     <span className="text-[10px] leading-none text-muted-foreground/60">
-                      {[player.team, player.positionalTier].filter(Boolean).join(" · ")}
+                      {[player.team, player.positionalTier]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      {actual && (
+                        <span className="m-1 shrink-0 rounded bg-primary/15 px-1 py-0.5 font-mono text-[9px] leading-none font-bold text-primary">
+                          DRAFTED
+                        </span>
+                      )}
                     </span>
                   )}
                 </>
@@ -368,16 +397,28 @@ export function MyTeam({
 
             {/* Value */}
             <span className="w-9 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
-              {player ? (() => { const v = fbgAvg(player); return v != null ? `$${v.toFixed(0)}` : "—" })() : "—"}
+              {player
+                ? (() => {
+                    const v = fbgAvg(player)
+                    return v != null ? `$${v.toFixed(0)}` : "—"
+                  })()
+                : "—"}
             </span>
 
             {/* Est. */}
             <span className="w-8 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
-              {player ? (() => { const b = parseSalary(player.scEspn200); return b != null ? `$${Math.round(b * 1.25)}` : "—" })() : "—"}
+              {player
+                ? (() => {
+                    const b = parseSalary(player.scEspn200)
+                    return b != null ? `$${Math.round(b * 1.25)}` : "—"
+                  })()
+                : "—"}
             </span>
 
             {/* $Paid */}
-            <span className={`w-10 shrink-0 text-right font-mono text-[11px] ${actual ? "font-semibold text-primary" : "text-muted-foreground/40"}`}>
+            <span
+              className={`w-10 shrink-0 text-right font-mono text-[11px] ${actual ? "font-semibold text-primary" : "text-muted-foreground/40"}`}
+            >
               {actual ? `$${actual.draftPick.salary}` : "—"}
             </span>
           </div>
