@@ -407,57 +407,57 @@ export function DashboardClient({
       <div className="flex flex-col gap-3 w-96 shrink-0 overflow-y-auto">
         <div className="flex-1 rounded-xl bg-muted/50 p-4 overflow-y-auto">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex rounded-md bg-muted p-0.5 text-xs gap-0.5">
+            <div className="flex rounded-md bg-muted p-0.5 gap-0.5">
               <button
                 onClick={() => setRightPanel("details")}
-                className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition-colors ${
+                title="Details"
+                className={`relative flex min-w-8 items-center justify-center rounded p-1.5 transition-colors ${
                   rightPanel === "details"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <User className="h-3 w-3" />
-                Details
+                <User className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setRightPanel("my-list")}
-                className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition-colors ${
+                title="My List"
+                className={`relative flex min-w-8 items-center justify-center rounded p-1.5 transition-colors ${
                   rightPanel === "my-list"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Star className="h-3 w-3" />
-                My List
+                <Star className="h-3.5 w-3.5" />
                 {flaggedCount > 0 && (
-                  <span className="rounded-full bg-yellow-400/20 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-400 leading-none">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-yellow-400 text-[8px] font-bold text-black leading-none">
                     {flaggedCount}
                   </span>
                 )}
               </button>
               <button
                 onClick={() => setRightPanel("my-team")}
-                className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition-colors ${
+                title="My Team"
+                className={`relative flex min-w-8 items-center justify-center rounded p-1.5 transition-colors ${
                   rightPanel === "my-team"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Users className="h-3 w-3" />
-                My Team
+                <Users className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setRightPanel("picks")}
-                className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition-colors ${
+                title="Picks"
+                className={`relative flex min-w-8 items-center justify-center rounded p-1.5 transition-colors ${
                   rightPanel === "picks"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <ListChecks className="h-3 w-3" />
-                Picks
+                <ListChecks className="h-3.5 w-3.5" />
                 {picksCount > 0 && (
-                  <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-primary leading-none">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground leading-none">
                     {picksCount}
                   </span>
                 )}
