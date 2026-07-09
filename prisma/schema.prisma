@@ -101,7 +101,8 @@ model Player {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  rankings PlayerRanking[]
+  rankings  PlayerRanking[]
+  draftPick DraftPick?
 
   @@map("players")
 }
@@ -157,4 +158,28 @@ model TeamSnapshot {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("team_snapshots")
+}
+
+model DraftTeam {
+  id        String      @id @default(cuid())
+  name      String
+  budget    Int         @default(250)
+  isMyTeam  Boolean     @default(false) @map("is_my_team")
+  picks     DraftPick[]
+
+  @@map("draft_teams")
+}
+
+model DraftPick {
+  id        String    @id @default(cuid())
+  teamId    String    @map("team_id")
+  playerId  String    @unique @map("player_id")
+  salary    Int
+  pos       String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  team   DraftTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("draft_picks")
 }

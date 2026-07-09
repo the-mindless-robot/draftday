@@ -10,7 +10,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Search, Star, Target } from "lucide-react"
+import { Search, Star, Target, Gavel } from "lucide-react"
 import { Fragment, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +33,7 @@ declare module "@tanstack/react-table" {
     activePosition: string
     onFlag?: (player: RankedPlayer) => void
     onTarget?: (player: RankedPlayer) => void
+    onDraft?: (player: RankedPlayer) => void
   }
 }
 
@@ -80,6 +81,13 @@ type RankedPlayer = {
   espnRankDelta: number | null
   flagged: boolean
   targeted: boolean
+  draftPick: {
+    id: string
+    salary: number
+    teamId: string
+    createdAt: string | Date
+    team: { id: string; name: string; isMyTeam: boolean }
+  } | null
 }
 
 function parseSalary(val: string | null): number | null {
@@ -156,6 +164,25 @@ const columns: ColumnDef<RankedPlayer>[] = [
     header: () => null,
     cell: ({ row, table }) => {
       const player = row.original
+      if (player.draftPick) {
+        const initials = player.draftPick.team.name
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .slice(0, 3)
+          .toUpperCase()
+        return (
+          <span
+            className={`inline-flex h-5 items-center rounded px-1 text-[9px] font-bold tracking-wide ${
+              player.draftPick.team.isMyTeam
+                ? "bg-primary/20 text-primary"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {initials}
+          </span>
+        )
+      }
       return (
         <div className="flex items-center gap-0.5">
           <button
@@ -179,6 +206,15 @@ const columns: ColumnDef<RankedPlayer>[] = [
             <Target
               className={`h-3.5 w-3.5 ${player.targeted ? "fill-red-400 text-red-400" : "text-muted-foreground/40"}`}
             />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              table.options.meta?.onDraft?.(player)
+            }}
+            className="flex items-center justify-center p-0.5 text-muted-foreground/40 transition-opacity hover:text-primary hover:opacity-80"
+          >
+            <Gavel className="h-3.5 w-3.5" />
           </button>
         </div>
       )
@@ -325,8 +361,18 @@ const columns: ColumnDef<RankedPlayer>[] = [
     id: "salary",
     header: ({ column }) => <SortableHeader column={column} label="Value" />,
     accessorFn: (row) => avgSalary(row.scFbg250, row.scFbg200),
-    cell: ({ getValue }) => {
+    cell: ({ getValue, row }) => {
       const v = getValue() as number | null
+      const actual = row.original.draftPick?.salary ?? null
+      if (actual != null) {
+        return (
+          <span className="flex items-baseline gap-1">
+            <span>{v != null ? `$${v.toFixed(0)}` : "—"}</span>
+            <span className="text-[10px] text-muted-foreground">/</span>
+            <span className="font-semibold text-primary">${actual}</span>
+          </span>
+        )
+      }
       return <span>{v != null ? `$${v.toFixed(0)}` : "—"}</span>
     },
   },
@@ -347,8 +393,18 @@ const columns: ColumnDef<RankedPlayer>[] = [
       const base = parseSalary(row.scEspn200)
       return base != null ? Math.round(base * 1.25) : null
     },
-    cell: ({ getValue }) => {
+    cell: ({ getValue, row }) => {
       const v = getValue() as number | null
+      const actual = row.original.draftPick?.salary ?? null
+      if (actual != null) {
+        return (
+          <span className="flex items-baseline gap-1">
+            <span>{v != null ? `$${v}` : "—"}</span>
+            <span className="text-[10px] text-muted-foreground">/</span>
+            <span className="font-semibold text-primary">${actual}</span>
+          </span>
+        )
+      }
       return <span>{v != null ? `$${v}` : "—"}</span>
     },
   },
@@ -422,12 +478,14 @@ export function RankingsTable({
   onPlayerSelect,
   onFlag,
   onTarget,
+  onDraft,
 }: {
   players: RankedPlayer[]
   selectedPlayerId?: string
   onPlayerSelect?: (player: RankedPlayer) => void
   onFlag?: (player: RankedPlayer) => void
   onTarget?: (player: RankedPlayer) => void
+  onDraft?: (player: RankedPlayer) => void
 }) {
   "use no memo"
   const [activePosition, setActivePosition] = useState<Position>("overall")
@@ -463,7 +521,7 @@ export function RankingsTable({
   const table = useReactTable({
     data,
     columns,
-    meta: { maxUpside, maxDownside, activePosition, onFlag, onTarget },
+    meta: { maxUpside, maxDownside, activePosition, onFlag, onTarget, onDraft },
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
@@ -567,7 +625,10 @@ export function RankingsTable({
                         ? "selected"
                         : undefined
                     }
-                    className="cursor-pointer"
+                    className={cn(
+                      "cursor-pointer",
+                      row.original.draftPick && "opacity-40"
+                    )}
                     onClick={() => onPlayerSelect?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
