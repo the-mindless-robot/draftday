@@ -74,7 +74,6 @@ type RankedPlayer = {
   upside: number | null
   downside: number | null
   scFbg250: string | null
-  scFbg200: string | null
   scFbgScaled: string | null
   scEspn200: string | null
   fbgRankDelta: number | null
@@ -96,14 +95,6 @@ function parseSalary(val: string | null): number | null {
   return isNaN(n) ? null : n
 }
 
-function avgSalary(a: string | null, b: string | null): number | null {
-  const va = parseSalary(a)
-  const vb = parseSalary(b)
-  if (va == null && vb == null) return null
-  if (va == null) return vb
-  if (vb == null) return va
-  return (va + vb) / 2
-}
 
 function posColor(pos: string | null): string {
   switch (pos?.toUpperCase()) {
@@ -286,16 +277,9 @@ const columns: ColumnDef<RankedPlayer>[] = [
     header: ({ column }) => <SortableHeader column={column} label="Δ$" />,
     accessorFn: (row) => {
       const fbg250 = parseSalary(row.scFbg250)
-      const fbg200 = parseSalary(row.scFbg200)
       const espn200 = parseSalary(row.scEspn200)
-      if (espn200 == null) return null
-      const fbgAvg =
-        fbg250 != null && fbg200 != null
-          ? (fbg250 + fbg200) / 2
-          : (fbg250 ?? fbg200)
-      const espnAvg = espn200 * 1.125
-      if (fbgAvg == null) return null
-      return fbgAvg - espnAvg
+      if (espn200 == null || fbg250 == null) return null
+      return fbg250 - espn200 * 1.125
     },
     cell: ({ getValue }) => {
       const delta = getValue() as number | null
@@ -360,7 +344,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
   {
     id: "salary",
     header: ({ column }) => <SortableHeader column={column} label="Value" />,
-    accessorFn: (row) => avgSalary(row.scFbg250, row.scFbg200),
+    accessorFn: (row) => parseSalary(row.scFbg250),
     cell: ({ getValue, row }) => {
       const v = getValue() as number | null
       const actual = row.original.draftPick?.salary ?? null
@@ -380,9 +364,8 @@ const columns: ColumnDef<RankedPlayer>[] = [
     id: "salary_range",
     header: ({ column }) => <SortableHeader column={column} label="Range" />,
     cell: ({ row }) => {
-      const hi = row.original.scFbg250 ?? null
-      const low = row.original.scFbg200 ?? null
-      const range = hi != null && low != null ? `${hi} - ${low}` : "—"
+      const v = parseSalary(row.original.scFbg250)
+      const range = v != null ? `$${Math.round(v * 1.1)} – $${Math.round(v * 0.9)}` : "—"
       return <span>{range}</span>
     },
   },

@@ -93,7 +93,6 @@ model Player {
 
   // Salary cap — stamped on import (no history)
   scFbg250    String? @map("salary_cap_fbg_250")
-  scFbg200    String? @map("salary_cap_fbg_200")
   scFbgScaled String? @map("salary_cap_fbg_scaled")
   scEspn250   String? @map("salary_cap_espn_250")
   scEspn200   String? @map("salary_cap_espn_200")

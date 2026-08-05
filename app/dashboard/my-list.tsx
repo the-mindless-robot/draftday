@@ -12,7 +12,6 @@ type RankedPlayer = {
   positionalRank: number | null
   overallRank: number | null
   scFbg250: string | null
-  scFbg200: string | null
   scEspn200: string | null
   flagged: boolean
   targeted: boolean
@@ -26,10 +25,7 @@ function parseSalary(val: string | null): number | null {
 }
 
 function fbgAvg(p: RankedPlayer): number | null {
-  const a = parseSalary(p.scFbg250)
-  const b = parseSalary(p.scFbg200)
-  if (a != null && b != null) return (a + b) / 2
-  return a ?? b
+  return parseSalary(p.scFbg250)
 }
 
 const POS_ORDER = ["QB", "RB", "WR", "TE", "K", "PK"]

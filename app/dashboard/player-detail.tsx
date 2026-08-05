@@ -30,7 +30,6 @@ type RankedPlayer = {
   upside: number | null
   downside: number | null
   scFbg250: string | null
-  scFbg200: string | null
   scFbgScaled: string | null
   scEspn200: string | null
   fbgRankDelta: number | null
@@ -452,22 +451,18 @@ export function PlayerDetail({
         <SectionLabel>Salary Cap</SectionLabel>
         {(() => {
           const fbg250 = parseSalary(player.scFbg250)
-          const fbg200 = parseSalary(player.scFbg200)
           const espn200 = parseSalary(player.scEspn200)
           const espn250 = espn200 != null ? Math.round(espn200 * 1.25) : null
-          const fbgAvg =
-            fbg250 != null && fbg200 != null
-              ? (fbg250 + fbg200) / 2
-              : (fbg250 ?? fbg200)
+          const fbgAvg = fbg250
           const espnAvg =
             espn200 != null && espn250 != null
               ? (espn200 + espn250) / 2
               : espn200
           const delta = espnAvg != null && fbgAvg != null ? fbgAvg - espnAvg : null
           const fbgRange =
-            player.scFbg250 != null && player.scFbg200 != null
-              ? `${player.scFbg250} – ${player.scFbg200}`
-              : (player.scFbg250 ?? player.scFbg200)
+            fbg250 != null
+              ? `$${Math.round(fbg250 * 1.1)} – $${Math.round(fbg250 * 0.9)}`
+              : null
           const espnRange =
             espn250 != null && espn200 != null
               ? `$${espn250} – $${espn200}`

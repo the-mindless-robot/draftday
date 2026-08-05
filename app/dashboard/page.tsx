@@ -35,7 +35,6 @@ export default async function Page() {
         upside: true,
         downside: true,
         scFbg250: true,
-        scFbg200: true,
         scFbgScaled: true,
         scEspn200: true,
         draftPick: {

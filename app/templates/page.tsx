@@ -28,7 +28,6 @@ export default async function Page() {
       experience: true,
       byeWeek: true,
       scFbg250: true,
-      scFbg200: true,
       scFbgScaled: true,
       scEspn200: true,
       fbgRankDelta: true,

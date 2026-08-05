@@ -194,10 +194,7 @@ export async function saveImport({
         if (position === "overall") {
           importedFbgIds.push(row.playerId)
 
-          const scField =
-            budget === 250
-              ? { scFbg250: row["Salary Cap"] || null }
-              : { scFbg200: row["Salary Cap"] || null }
+          const scField = { scFbg250: row["Salary Cap"] || null }
 
           const { pos, positionalRank } = splitPos(row.Pos)
           const newOverallRank = toInt(row.Rank)

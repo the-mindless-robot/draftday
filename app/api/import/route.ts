@@ -16,11 +16,11 @@ export async function POST(req: NextRequest) {
 
     try {
       const arrayBuffer = await file.arrayBuffer()
-      const allRows = await parseESPN(new Uint8Array(arrayBuffer))
+      const { rows: allRows, rawText } = await parseESPN(new Uint8Array(arrayBuffer))
 
       if (allRows.length === 0) {
         return NextResponse.json(
-          { error: "No rankings found in the PDF." },
+          { error: "No rankings found in the PDF.", rawTextSample: rawText.slice(0, 2000) },
           { status: 422 }
         )
       }

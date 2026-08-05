@@ -55,7 +55,6 @@ export type RankedPlayer = {
   upside: number | null
   downside: number | null
   scFbg250: string | null
-  scFbg200: string | null
   scFbgScaled: string | null
   scEspn200: string | null
   fbgRankDelta: number | null
@@ -74,10 +73,7 @@ function parseSalary(val: string | null): number | null {
 }
 
 function fbgAvg(p: RankedPlayer): number | null {
-  const a = parseSalary(p.scFbg250)
-  const b = parseSalary(p.scFbg200)
-  if (a != null && b != null) return (a + b) / 2
-  return a ?? b
+  return parseSalary(p.scFbg250)
 }
 
 function posColor(pos: string | null): string {
@@ -185,10 +181,7 @@ function DraftForm({
 }) {
   const [teamId, setTeamId] = useState(draftTeams[0]?.id ?? "")
   const [salary, setSalary] = useState(() => {
-    const avg = parseSalary(player.scFbg250)
-    const b = parseSalary(player.scFbg200)
-    if (avg != null && b != null) return Math.round((avg + b) / 2)
-    return avg ?? b ?? 1
+    return parseSalary(player.scFbg250) ?? 1
   })
   const [saving, setSaving] = useState(false)
 

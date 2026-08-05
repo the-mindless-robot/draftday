@@ -25,7 +25,6 @@ type Player = {
   experience: number | null
   byeWeek: number | null
   scFbg250: string | null
-  scFbg200: string | null
   scFbgScaled: string | null
   scEspn200: string | null
   fbgRankDelta: number | null
@@ -50,10 +49,7 @@ function parseSalary(val: string | null): number | null {
 }
 
 function fbgSalary(p: Player): number | null {
-  const a = parseSalary(p.scFbg250)
-  const b = parseSalary(p.scFbg200)
-  if (a != null && b != null) return (a + b) / 2
-  return a ?? b
+  return parseSalary(p.scFbg250)
 }
 
 // Explicit class strings so Tailwind picks them all up at build time
