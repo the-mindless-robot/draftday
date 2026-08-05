@@ -279,7 +279,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
       const fbg250 = parseSalary(row.scFbg250)
       const espn200 = parseSalary(row.scEspn200)
       if (espn200 == null || fbg250 == null) return null
-      return fbg250 - espn200 * 1.125
+      return fbg250 - espn200 * 1.25
     },
     cell: ({ getValue }) => {
       const delta = getValue() as number | null
