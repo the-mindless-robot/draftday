@@ -57,7 +57,7 @@ const data = {
       items: [],
     },
     {
-      title: "Templates",
+      title: "My Team",
       url: "/templates",
       icon: <LayersIcon />,
       items: [],

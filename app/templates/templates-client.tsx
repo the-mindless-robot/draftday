@@ -30,6 +30,7 @@ type Player = {
   fbgRankDelta: number | null
   espnRankDelta: number | null
   flagged: boolean
+  targeted: boolean
 }
 
 type RosterSlot = {
@@ -143,7 +144,6 @@ function getSlotPlayers(
   const eligible = players.filter((p) => {
     if (exclude.has(p.id)) return false
     const pos = p.pos?.toUpperCase() ?? ""
-    // TD/DST are interchangeable
     if (posSet.has("TD") || posSet.has("DST")) {
       if (pos === "TD" || pos === "DST" || pos === "D/ST") return true
     }
@@ -158,32 +158,41 @@ function getSlotPlayers(
     defaultRankOf(a) - defaultRankOf(b)
   const sort = sortFn ? sortFn(budget) : defaultSort
 
-  // Salary window: [0.65×, 1.5×] of slot budget — shows players in this price tier
-  const tryRange = (lo: number, hi: number): Player[] =>
-    eligible
-      .filter((p) => {
-        const sal = fbgSalary(p)
-        return sal != null && sal >= lo && sal <= hi
-      })
-      .sort(sort)
+  const proximitySort = (a: Player, b: Player) =>
+    Math.abs((fbgSalary(a) ?? 0) - budget) -
+    Math.abs((fbgSalary(b) ?? 0) - budget)
 
   const lo = Math.max(0, budget - maxBelow)
   const hi = budget + maxAbove
-  const result = tryRange(lo, hi)
-  if (result.length >= count) return result.slice(0, count)
 
-  // Final fallback: closest salary match
+  const inWindow = (p: Player) => {
+    const sal = fbgSalary(p)
+    return sal != null && sal >= lo && sal <= hi
+  }
+
+  // Tier within the salary window: targeted first, then flagged, then rest
+  const windowPlayers = eligible.filter(inWindow)
+  const targeted = windowPlayers.filter((p) => p.targeted).sort(proximitySort)
+  const flagged = windowPlayers
+    .filter((p) => p.flagged && !p.targeted)
+    .sort(proximitySort)
+  const remaining = windowPlayers
+    .filter((p) => !p.targeted && !p.flagged)
+    .sort(sort)
+
+  const result = [...targeted, ...flagged, ...remaining].slice(0, count)
+  if (result.length >= count) return result
+
+  // Fallback: closest salary match outside the window, same tier ordering
   const seen = new Set(result.map((p) => p.id))
-  const rest = [...eligible]
-    .filter((p) => !seen.has(p.id))
+  const fallback = eligible
+    .filter((p) => !seen.has(p.id) && !inWindow(p))
     .sort((a, b) => {
-      const diff =
-        Math.abs((fbgSalary(a) ?? 0) - budget) -
-        Math.abs((fbgSalary(b) ?? 0) - budget)
+      const diff = proximitySort(a, b)
       return diff !== 0 ? diff : sort(a, b)
     })
 
-  return [...result, ...rest].slice(0, count)
+  return [...result, ...fallback].slice(0, count)
 }
 
 // ── Strategy Definitions ──────────────────────────────────────────────────────
@@ -901,37 +910,28 @@ export function TemplatesClient({ players }: { players: Player[] }) {
   return (
     <div className="flex h-full flex-col gap-4 overflow-hidden p-4">
       {/* ── Strategy Selector ── */}
-      <div className="grid shrink-0 grid-cols-6 gap-3">
-        {STRATEGIES.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setStrategyId(s.id)}
-            className={cn(
-              "rounded-xl border p-3 text-left transition-colors",
-              s.id === strategyId
-                ? "border-border bg-muted"
-                : "border-transparent bg-muted/30 hover:bg-muted/50"
-            )}
-          >
-            <p className={cn("text-xs font-bold", s.accentClass)}>{s.name}</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">
-              {s.tagline}
-            </p>
-          </button>
-        ))}
+      <div className="flex shrink-0 items-center gap-3">
+        <select
+          value={isCustom ? STRATEGIES[0].id : strategyId}
+          onChange={(e) => setStrategyId(e.target.value)}
+          className="rounded-lg border border-border bg-muted px-3 py-2 font-mono text-sm text-foreground transition-colors hover:bg-muted/80 focus:outline-none"
+        >
+          {STRATEGIES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
         <button
           onClick={() => setStrategyId("custom")}
           className={cn(
-            "rounded-xl border p-3 text-left transition-colors",
+            "rounded-lg border px-3 py-2 text-sm transition-colors",
             isCustom
-              ? "border-border bg-muted"
-              : "border-dashed border-border/60 bg-muted/30 hover:bg-muted/50"
+              ? "border-border bg-muted font-semibold text-foreground"
+              : "border-dashed border-border/60 bg-muted/30 text-foreground/70 hover:bg-muted/50"
           )}
         >
-          <p className="text-xs font-bold text-foreground/70">Custom</p>
-          <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">
-            Set your own slot budgets
-          </p>
+          Custom
         </button>
       </div>
 
@@ -1101,7 +1101,11 @@ export function TemplatesClient({ players }: { players: Player[] }) {
         {/* Right Column — Player Detail + Comps */}
         <div className="flex w-80 shrink-0 flex-col gap-3 overflow-y-auto">
           <div className="min-h-[200px] rounded-xl bg-muted/50 p-4">
-            <PlayerDetail player={selectedPlayer} globalMax={globalMax} rankingHistory={null} />
+            <PlayerDetail
+              player={selectedPlayer}
+              globalMax={globalMax}
+              rankingHistory={null}
+            />
           </div>
           <PositionalComps
             label={
