@@ -2,15 +2,35 @@
 
 import { useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
+import { Star, User, ListChecks } from "lucide-react"
 import { PlayerDetail } from "@/app/dashboard/player-detail"
+import { MyList } from "@/app/dashboard/my-list"
+import { DraftLog } from "@/app/dashboard/draft-log"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+type DraftPickInfo = {
+  id: string
+  salary: number
+  teamId: string
+  createdAt: string | Date
+  team: { id: string; name: string; isMyTeam: boolean }
+}
+
+type DraftTeamInfo = {
+  id: string
+  name: string
+  budget: number
+  isMyTeam: boolean
+}
+
 type Player = {
   id: string
+  fbgId: string
   name: string
   team: string | null
   pos: string | null
+  draftPick: DraftPickInfo | null
   overallRank: number | null
   espnOverallRank: number | null
   positionalRank: number | null
@@ -813,7 +833,14 @@ function PositionalComps({
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export function TemplatesClient({ players }: { players: Player[] }) {
+export function TemplatesClient({
+  players: initialPlayers,
+  draftTeams,
+}: {
+  players: Player[]
+  draftTeams: DraftTeamInfo[]
+}) {
+  const [players, setPlayers] = useState(initialPlayers)
   const [strategyId, setStrategyId] = useState(STRATEGIES[0].id)
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
   const [maxAbove, setMaxAbove] = useState(15)
@@ -821,6 +848,84 @@ export function TemplatesClient({ players }: { players: Player[] }) {
   const [customBudgets, setCustomBudgets] = useState<number[]>(() =>
     CUSTOM_TEMPLATE_SLOTS.map((s) => s.budget)
   )
+  const [rightPanel, setRightPanel] = useState<"details" | "my-list" | "picks">("details")
+
+  async function handleFlag(player: Player) {
+    const wasFlagged = player.flagged
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.id === player.id
+          ? { ...p, flagged: !wasFlagged, ...(wasFlagged && { targeted: false }) }
+          : p
+      )
+    )
+    if (selectedPlayer?.id === player.id) {
+      setSelectedPlayer((prev) =>
+        prev ? { ...prev, flagged: !wasFlagged, ...(wasFlagged && { targeted: false }) } : null
+      )
+    }
+    try {
+      await fetch(`/api/players/${player.id}/flag`, { method: "PATCH" })
+    } catch {
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.id === player.id ? { ...p, flagged: wasFlagged, targeted: player.targeted } : p
+        )
+      )
+    }
+  }
+
+  async function handleTarget(player: Player) {
+    const wasTargeted = player.targeted
+    const wasFlagged = player.flagged
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.id === player.id
+          ? { ...p, targeted: !wasTargeted, ...(!wasTargeted && { flagged: true }) }
+          : p
+      )
+    )
+    if (selectedPlayer?.id === player.id) {
+      setSelectedPlayer((prev) =>
+        prev ? { ...prev, targeted: !wasTargeted, ...(!wasTargeted && { flagged: true }) } : null
+      )
+    }
+    try {
+      await fetch(`/api/players/${player.id}/target`, { method: "PATCH" })
+    } catch {
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.id === player.id ? { ...p, targeted: wasTargeted, flagged: wasFlagged } : p
+        )
+      )
+    }
+  }
+
+  async function handleEditPick(pickId: string, teamId: string, salary: number) {
+    const res = await fetch(`/api/draft/picks/${pickId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ teamId, salary }),
+    })
+    const updated = (await res.json()) as DraftPickInfo
+    setPlayers((prev) =>
+      prev.map((p) => (p.draftPick?.id === pickId ? { ...p, draftPick: updated } : p))
+    )
+  }
+
+  async function handleDeletePick(pickId: string) {
+    await fetch(`/api/draft/picks/${pickId}`, { method: "DELETE" })
+    setPlayers((prev) =>
+      prev.map((p) => (p.draftPick?.id === pickId ? { ...p, draftPick: null } : p))
+    )
+  }
+
+  const draftedPlayers = useMemo(
+    () => players.filter((p) => p.draftPick !== null) as (Player & { draftPick: DraftPickInfo })[],
+    [players]
+  )
+  const flaggedCount = players.filter((p) => p.flagged).length
+  const picksCount = draftedPlayers.length
 
   const isCustom = strategyId === "custom"
   const strategy = isCustom
@@ -1098,23 +1203,93 @@ export function TemplatesClient({ players }: { players: Player[] }) {
           </div>
         </div>
 
-        {/* Right Column — Player Detail + Comps */}
-        <div className="flex w-80 shrink-0 flex-col gap-3 overflow-y-auto">
-          <div className="min-h-[200px] rounded-xl bg-muted/50 p-4">
-            <PlayerDetail
-              player={selectedPlayer}
-              globalMax={globalMax}
-              rankingHistory={null}
-            />
+        {/* Right Column — Tabbed Panel */}
+        <div className="flex w-96 shrink-0 flex-col gap-3 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto rounded-xl bg-muted/50 p-4">
+            <div className="mb-3 flex items-center">
+              <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
+                <button
+                  onClick={() => setRightPanel("details")}
+                  title="Details"
+                  className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
+                    rightPanel === "details"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <User className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setRightPanel("my-list")}
+                  title="My List"
+                  className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
+                    rightPanel === "my-list"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Star className="h-3.5 w-3.5" />
+                  {flaggedCount > 0 && (
+                    <span className="absolute top-0.5 right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-yellow-400 px-0.5 py-px text-[8px] font-bold leading-none text-black">
+                      {flaggedCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setRightPanel("picks")}
+                  title="Picks"
+                  className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
+                    rightPanel === "picks"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <ListChecks className="h-3.5 w-3.5" />
+                  {picksCount > 0 && (
+                    <span className="absolute top-0.5 right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 py-px text-[8px] font-bold leading-none text-primary-foreground">
+                      {picksCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className={rightPanel !== "details" ? "hidden" : ""}>
+              <PlayerDetail player={selectedPlayer} globalMax={globalMax} rankingHistory={null} />
+            </div>
+            <div className={rightPanel !== "my-list" ? "hidden" : ""}>
+              <MyList
+                players={players}
+                onPlayerSelect={(p) => {
+                  const full = players.find((pl) => pl.id === p.id) ?? null
+                  setSelectedPlayer(full)
+                  setRightPanel("details")
+                }}
+                onFlag={(id) => {
+                  const p = players.find((pl) => pl.id === id)
+                  if (p) handleFlag(p)
+                }}
+                onTarget={(id) => {
+                  const p = players.find((pl) => pl.id === id)
+                  if (p) handleTarget(p)
+                }}
+              />
+            </div>
+            <div className={rightPanel !== "picks" ? "hidden" : ""}>
+              <DraftLog
+                players={draftedPlayers}
+                draftTeams={draftTeams}
+                onEdit={handleEditPick}
+                onDelete={handleDeletePick}
+              />
+            </div>
           </div>
-          <PositionalComps
-            label={
-              selectedPlayer
-                ? `Similar ${selectedPlayer.pos ?? ""}s`
-                : "Positional comps"
-            }
-            players={positionalComps}
-          />
+          {rightPanel === "details" && selectedPlayer && (
+            <PositionalComps
+              label={`Similar ${selectedPlayer.pos ?? ""}s`}
+              players={positionalComps}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -5,37 +5,53 @@ import prisma from "@/lib/prisma"
 import { TemplatesClient } from "./templates-client"
 
 export default async function Page() {
-  const players = await prisma.player.findMany({
-    where: { overallRank: { not: null } },
-    orderBy: { overallRank: "asc" },
-    take: 300,
-    select: {
-      id: true,
-      name: true,
-      team: true,
-      pos: true,
-      overallRank: true,
-      espnOverallRank: true,
-      positionalRank: true,
-      espnPositionalRank: true,
-      overallTier: true,
-      positionalTier: true,
-      projPoints: true,
-      projGames: true,
-      upside: true,
-      downside: true,
-      age: true,
-      experience: true,
-      byeWeek: true,
-      scFbg250: true,
-      scFbgScaled: true,
-      scEspn200: true,
-      fbgRankDelta: true,
-      espnRankDelta: true,
-      flagged: true,
-      targeted: true,
-    },
-  })
+  const [players, draftTeams] = await Promise.all([
+    prisma.player.findMany({
+      where: { overallRank: { not: null } },
+      orderBy: { overallRank: "asc" },
+      take: 300,
+      select: {
+        id: true,
+        fbgId: true,
+        name: true,
+        team: true,
+        pos: true,
+        overallRank: true,
+        espnOverallRank: true,
+        positionalRank: true,
+        espnPositionalRank: true,
+        overallTier: true,
+        positionalTier: true,
+        projPoints: true,
+        projGames: true,
+        upside: true,
+        downside: true,
+        age: true,
+        experience: true,
+        byeWeek: true,
+        scFbg250: true,
+        scFbgScaled: true,
+        scEspn200: true,
+        fbgRankDelta: true,
+        espnRankDelta: true,
+        flagged: true,
+        targeted: true,
+        draftPick: {
+          select: {
+            id: true,
+            salary: true,
+            teamId: true,
+            createdAt: true,
+            team: { select: { id: true, name: true, isMyTeam: true } },
+          },
+        },
+      },
+    }),
+    prisma.draftTeam.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, budget: true, isMyTeam: true },
+    }),
+  ])
 
   return (
     <div className="flex h-dvh flex-col [--header-height:calc(--spacing(14))]">
@@ -44,7 +60,7 @@ export default async function Page() {
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar />
           <SidebarInset className="overflow-hidden">
-            <TemplatesClient players={players} />
+            <TemplatesClient players={players} draftTeams={draftTeams} />
           </SidebarInset>
         </div>
       </SidebarProvider>

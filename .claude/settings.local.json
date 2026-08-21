@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(grep -oE '[A-Z]{2,3}/[0-9]+')",
-      "Bash(grep -rn \"team-abbr\" . --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\")"
+      "Bash(grep -rn \"team-abbr\" . --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\")",
+      "Bash(python3 -)"
     ]
   }
 }
