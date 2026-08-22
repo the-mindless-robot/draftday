@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import pickEmitter from "@/lib/pick-events"
 
 // CORS required so the Chrome extension (running on ESPN's domain) can POST here
 const cors = {
@@ -13,11 +14,10 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
-  const { playerName, teamName, salary, pickNumber } = (await req.json()) as {
+  const { playerName, teamName, salary } = (await req.json()) as {
     playerName: string
     teamName: string
     salary: number
-    pickNumber?: number
   }
 
   // 1. Resolve player — exact match first, then last-name fallback
@@ -98,6 +98,8 @@ export async function POST(req: NextRequest) {
       player: { select: { id: true, name: true, pos: true } },
     },
   })
+
+  pickEmitter.emit("pick")
 
   return NextResponse.json(pick, { headers: cors })
 }
