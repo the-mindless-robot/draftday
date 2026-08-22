@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { Star, User, Users, ListChecks } from "lucide-react"
+import { useState, useEffect, useMemo, useCallback } from "react"
+import { Star, User, Users, ListChecks, BarChart2 } from "lucide-react"
 import { fbgPlayerUrl } from "@/lib/fbg-url"
 import { RankingsTable } from "./rankings-table"
 import { PlayerDetail } from "./player-detail"
 import { MyList } from "./my-list"
 import { MyTeam } from "./my-team"
 import { DraftLog } from "./draft-log"
+import { DraftAnalytics } from "./draft-analytics"
 
 type RankingSnapshot = {
   overallRank: number | null
@@ -267,7 +268,7 @@ export function DashboardClient({
     null
   )
   const [rightPanel, setRightPanel] = useState<
-    "details" | "my-list" | "my-team" | "picks"
+    "details" | "my-list" | "my-team" | "picks" | "analytics"
   >("details")
   const [draftingPlayer, setDraftingPlayer] = useState<RankedPlayer | null>(
     null
@@ -283,6 +284,25 @@ export function DashboardClient({
       .then(setRankingHistory)
       .catch(() => setRankingHistory(null))
   }, [selectedPlayer?.id])
+
+  const refreshPicks = useCallback(async () => {
+    const res = await fetch("/api/draft/picks")
+    if (!res.ok) return
+    const data: { playerId: string; pick: DraftPickInfo }[] = await res.json()
+    const pickMap = new Map(data.map((d) => [d.playerId, d.pick]))
+    setPlayers((prev) =>
+      prev.map((p) => ({
+        ...p,
+        draftPick: pickMap.get(p.id) ?? p.draftPick,
+      }))
+    )
+  }, [])
+
+  useEffect(() => {
+    const es = new EventSource("/api/draft/events")
+    es.addEventListener("pick", refreshPicks)
+    return () => es.close()
+  }, [refreshPicks])
 
   // ── Draft handlers ────────────────────────────────────────────────────────
 
@@ -526,6 +546,17 @@ export function DashboardClient({
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setRightPanel("analytics")}
+                title="Draft Analytics"
+                className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
+                  rightPanel === "analytics"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <BarChart2 className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
 
@@ -572,6 +603,9 @@ export function DashboardClient({
               onEdit={handleEditPick}
               onDelete={handleDeletePick}
             />
+          </div>
+          <div className={rightPanel !== "analytics" ? "hidden" : ""}>
+            <DraftAnalytics players={players} />
           </div>
         </div>
         {rightPanel === "details" && selectedPlayer && (
