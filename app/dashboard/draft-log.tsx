@@ -23,17 +23,31 @@ export function DraftLog({
   draftTeams,
   onEdit,
   onDelete,
+  onReset,
 }: {
   players: DraftedPlayer[]
   draftTeams: DraftTeam[]
   onEdit: (pickId: string, teamId: string, salary: number) => Promise<void>
   onDelete: (pickId: string) => Promise<void>
+  onReset: () => Promise<void>
 }) {
+  const [resetting, setResetting] = useState(false)
+
   const sorted = [...players].sort(
     (a, b) =>
       new Date(a.draftPick.createdAt).getTime() -
       new Date(b.draftPick.createdAt).getTime()
   )
+
+  async function handleReset() {
+    if (!confirm(`Clear all ${sorted.length} picks? This cannot be undone.`)) return
+    setResetting(true)
+    try {
+      await onReset()
+    } finally {
+      setResetting(false)
+    }
+  }
 
   if (sorted.length === 0) {
     return (
@@ -65,6 +79,13 @@ export function DraftLog({
           onDelete={onDelete}
         />
       ))}
+      <button
+        onClick={handleReset}
+        disabled={resetting}
+        className="mt-3 w-full rounded border border-red-400/30 py-1.5 text-[11px] font-semibold text-red-400/70 transition-colors hover:border-red-400/60 hover:text-red-400 disabled:opacity-40"
+      >
+        {resetting ? "Clearing…" : "Reset Draft"}
+      </button>
     </div>
   )
 }

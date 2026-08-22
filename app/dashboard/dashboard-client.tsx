@@ -301,8 +301,23 @@ export function DashboardClient({
   useEffect(() => {
     const es = new EventSource("/api/draft/events")
     es.addEventListener("pick", refreshPicks)
+    es.addEventListener("nomination", (e: MessageEvent) => {
+      const playerName: string = e.data
+      const match =
+        players.find(
+          (p) => p.name.toLowerCase() === playerName.toLowerCase()
+        ) ??
+        players.find((p) => {
+          const last = playerName.trim().split(/\s+/).at(-1)?.toLowerCase() ?? ""
+          return last.length > 1 && p.name.toLowerCase().includes(last)
+        })
+      if (match) {
+        setSelectedPlayer(match)
+        setRightPanel("details")
+      }
+    })
     return () => es.close()
-  }, [refreshPicks])
+  }, [refreshPicks, players])
 
   // ── Draft handlers ────────────────────────────────────────────────────────
 
@@ -358,6 +373,11 @@ export function DashboardClient({
         p.draftPick?.id === pickId ? { ...p, draftPick: null } : p
       )
     )
+  }
+
+  async function handleResetDraft() {
+    await fetch("/api/draft/picks", { method: "DELETE" })
+    setPlayers((prev) => prev.map((p) => ({ ...p, draftPick: null })))
   }
 
   // ── Flag / Target handlers ────────────────────────────────────────────────
@@ -602,6 +622,7 @@ export function DashboardClient({
               draftTeams={draftTeams}
               onEdit={handleEditPick}
               onDelete={handleDeletePick}
+              onReset={handleResetDraft}
             />
           </div>
           <div className={rightPanel !== "analytics" ? "hidden" : ""}>

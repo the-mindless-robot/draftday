@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import pickEmitter from "@/lib/pick-events"
 
 export async function GET() {
   const picks = await prisma.draftPick.findMany({
@@ -19,6 +20,12 @@ export async function GET() {
       },
     }))
   )
+}
+
+export async function DELETE() {
+  await prisma.draftPick.deleteMany({})
+  pickEmitter.emit("pick")
+  return new Response(null, { status: 204 })
 }
 
 export async function POST(req: NextRequest) {

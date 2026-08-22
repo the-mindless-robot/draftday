@@ -16,7 +16,7 @@ chrome.storage.onChanged.addListener((changes) => {
 function init() {
   console.log('[DraftMonster] Starting...')
   waitFor('.pick-history', startPickHistory)
-  waitFor('.player-selected__player-info-container', startNominationWatcher)
+  startNominationWatcher()
 }
 
 function stop() {
@@ -84,10 +84,12 @@ function submitPick({ playerName, teamName, salary, pos }) {
 
 // ─── Current nomination watcher ──────────────────────────────────────────────
 
-function startNominationWatcher(container) {
+function startNominationWatcher() {
   let lastPlayerName = ''
 
-  function checkNomination() {
+  setInterval(() => {
+    const container = document.querySelector('.player-selected__player-info-container')
+    if (!container) return
     const playerName = container.querySelector('.playerinfo__playername')?.textContent?.trim()
     if (!playerName || playerName === lastPlayerName) return
     lastPlayerName = playerName
@@ -96,12 +98,8 @@ function startNominationWatcher(container) {
     const pos = container.querySelector('.playerinfo__playerpos')?.textContent?.trim()
 
     submitNomination({ playerName, team, pos })
-  }
+  }, 2000)
 
-  checkNomination()
-
-  const observer = new MutationObserver(checkNomination)
-  observer.observe(container, { childList: true, subtree: true, characterData: true })
   console.log('[DraftMonster] Watching nominations')
 }
 

@@ -17,12 +17,15 @@ export async function GET() {
       const ping = setInterval(() => send("ping", ""), 15_000)
 
       const onPick = () => send("pick", "")
+      const onNomination = (playerName: string) => send("nomination", playerName)
 
       pickEmitter.on("pick", onPick)
+      pickEmitter.on("nomination", onNomination)
 
       cleanup = () => {
         clearInterval(ping)
         pickEmitter.off("pick", onPick)
+        pickEmitter.off("nomination", onNomination)
       }
     },
     cancel() {

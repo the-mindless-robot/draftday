@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import pickEmitter from "@/lib/pick-events"
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -23,5 +24,6 @@ export async function POST(req: NextRequest) {
     pos: string
   }
   currentNomination = { playerName, team, pos }
+  pickEmitter.emit("nomination", playerName)
   return NextResponse.json(currentNomination, { headers: cors })
 }
