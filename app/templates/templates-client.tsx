@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { Star, User, ListChecks } from "lucide-react"
 import { PlayerDetail } from "@/app/dashboard/player-detail"
@@ -8,6 +8,12 @@ import { MyList } from "@/app/dashboard/my-list"
 import { DraftLog } from "@/app/dashboard/draft-log"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+type TeamSnapshot = {
+  id: string
+  name: string
+  budgets: number[]
+}
 
 type DraftPickInfo = {
   id: string
@@ -920,6 +926,41 @@ export function TemplatesClient({
     )
   }
 
+  const [snapshots, setSnapshots] = useState<TeamSnapshot[]>([])
+  const [showSaveInput, setShowSaveInput] = useState(false)
+  const [saveName, setSaveName] = useState("")
+  const [savingTemplate, setSavingTemplate] = useState(false)
+
+  const fetchSnapshots = useCallback(async () => {
+    const res = await fetch("/api/team-snapshots")
+    if (res.ok) setSnapshots(await res.json())
+  }, [])
+
+  useEffect(() => { fetchSnapshots() }, [fetchSnapshots])
+
+  async function handleSaveTemplate() {
+    if (!saveName.trim()) return
+    setSavingTemplate(true)
+    try {
+      await fetch("/api/team-snapshots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: saveName.trim(), budgets: customBudgets }),
+      })
+      await fetchSnapshots()
+      setSaveName("")
+      setShowSaveInput(false)
+    } finally {
+      setSavingTemplate(false)
+    }
+  }
+
+  async function handleDeleteSnapshot(id: string) {
+    await fetch(`/api/team-snapshots/${id}`, { method: "DELETE" })
+    setSnapshots((prev) => prev.filter((s) => s.id !== id))
+    if (strategyId === `snapshot:${id}`) setStrategyId(STRATEGIES[0].id)
+  }
+
   const draftedPlayers = useMemo(
     () => players.filter((p) => p.draftPick !== null) as (Player & { draftPick: DraftPickInfo })[],
     [players]
@@ -927,7 +968,8 @@ export function TemplatesClient({
   const flaggedCount = players.filter((p) => p.flagged).length
   const picksCount = draftedPlayers.length
 
-  const isCustom = strategyId === "custom"
+  const isSnapshot = strategyId.startsWith("snapshot:")
+  const isCustom = strategyId === "custom" || isSnapshot
   const strategy = isCustom
     ? CUSTOM_STRATEGY
     : (STRATEGIES.find((s) => s.id === strategyId) ?? STRATEGIES[0])
@@ -1015,17 +1057,30 @@ export function TemplatesClient({
   return (
     <div className="flex h-full flex-col gap-4 overflow-hidden p-4">
       {/* ── Strategy Selector ── */}
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-3">
         <select
-          value={isCustom ? STRATEGIES[0].id : strategyId}
-          onChange={(e) => setStrategyId(e.target.value)}
+          value={isCustom && !isSnapshot ? STRATEGIES[0].id : strategyId}
+          onChange={(e) => {
+            const val = e.target.value
+            if (val.startsWith("snapshot:")) {
+              const id = val.replace("snapshot:", "")
+              const snap = snapshots.find((s) => s.id === id)
+              if (snap) setCustomBudgets(snap.budgets)
+            }
+            setStrategyId(val)
+          }}
           className="rounded-lg border border-border bg-muted px-3 py-2 font-mono text-sm text-foreground transition-colors hover:bg-muted/80 focus:outline-none"
         >
           {STRATEGIES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
+            <option key={s.id} value={s.id}>{s.name}</option>
           ))}
+          {snapshots.length > 0 && (
+            <optgroup label="My Templates">
+              {snapshots.map((s) => (
+                <option key={s.id} value={`snapshot:${s.id}`}>{s.name}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
         <button
           onClick={() => setStrategyId("custom")}
@@ -1038,6 +1093,42 @@ export function TemplatesClient({
         >
           Custom
         </button>
+        {showSaveInput ? (
+          <div className="flex items-center gap-1.5">
+            <input
+              autoFocus
+              type="text"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSaveTemplate()
+                if (e.key === "Escape") { setShowSaveInput(false); setSaveName("") }
+              }}
+              placeholder="Template name…"
+              className="rounded-lg border border-border bg-background px-2.5 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+            />
+            <button
+              onClick={handleSaveTemplate}
+              disabled={savingTemplate || !saveName.trim()}
+              className="rounded-lg border border-border bg-muted px-3 py-2 text-sm font-semibold text-foreground transition-opacity hover:opacity-80 disabled:opacity-40"
+            >
+              {savingTemplate ? "Saving…" : "Save"}
+            </button>
+            <button
+              onClick={() => { setShowSaveInput(false); setSaveName("") }}
+              className="rounded-lg border border-border/50 px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowSaveInput(true)}
+            className="rounded-lg border border-dashed border-border/60 px-3 py-2 text-sm text-muted-foreground/70 transition-colors hover:border-border hover:text-foreground"
+          >
+            Save As Template
+          </button>
+        )}
       </div>
 
       {/* ── Main Layout ── */}

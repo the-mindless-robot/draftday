@@ -127,6 +127,11 @@ function fbgAvg(p: RankedPlayer): number | null {
   return parseSalary(p.scFbg250)
 }
 
+function espnScaled(p: RankedPlayer): number | null {
+  const v = parseSalary(p.scEspn200)
+  return v != null ? Math.round(v * 1.25) : null
+}
+
 export function MyTeam({
   players,
   myTeamPicks,
@@ -169,12 +174,12 @@ export function MyTeam({
           .filter((p) => {
             if (used.has(p.id) || !p.pos || !slot.positions.includes(p.pos))
               return false
-            const salary = fbgAvg(p)
+            const salary = espnScaled(p)
             return salary === null || salary <= budget + maxOver
           })
           .sort((a, b) => {
-            const aVal = fbgAvg(a) ?? 0
-            const bVal = fbgAvg(b) ?? 0
+            const aVal = espnScaled(a) ?? 0
+            const bVal = espnScaled(b) ?? 0
             return Math.abs(budget - aVal) - Math.abs(budget - bVal)
           })[0] ?? null
       )
