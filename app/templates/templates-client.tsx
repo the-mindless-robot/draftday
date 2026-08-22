@@ -235,7 +235,7 @@ type StrategyDef = {
   accentClass: string
   budgets: Record<string, SlotBudget> // for left panel bars
   priorityPositions: string[]
-  slots: RosterSlot[] // 16-slot roster for right panel
+  slots: RosterSlot[] // 17-slot roster for right panel
   slotSortFn?: (budget: number) => (a: Player, b: Player) => number // factory: receives slot budget, returns sort fn
 }
 
@@ -256,7 +256,7 @@ const STRATEGIES: StrategyDef[] = [
       QB: { slots: 1, budget: 10, label: "Stream" },
       TD: { slots: 1, budget: 5 },
       PK: { slots: 1, budget: 1 },
-      BENCH: { slots: 6, budget: 24, label: "Handcuffs" },
+      BENCH: { slots: 7, budget: 24, label: "Handcuffs" },
     },
     slots: [
       { label: "QB", budget: 10, positions: ["QB"], note: "Stream" },
@@ -283,7 +283,7 @@ const STRATEGIES: StrategyDef[] = [
       { label: "PK", budget: 1, positions: ["K", "PK"] },
       {
         label: "BENCH",
-        budget: 6,
+        budget: 5,
         positions: ["RB", "WR", "TE"],
         note: "Handcuff",
       },
@@ -291,6 +291,7 @@ const STRATEGIES: StrategyDef[] = [
       { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 3, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
     ],
   },
@@ -311,7 +312,7 @@ const STRATEGIES: StrategyDef[] = [
       TE: { slots: 1, budget: 10, label: "Stream" },
       TD: { slots: 1, budget: 5 },
       PK: { slots: 1, budget: 1 },
-      BENCH: { slots: 6, budget: 34 },
+      BENCH: { slots: 7, budget: 34 },
     },
     slots: [
       {
@@ -342,12 +343,13 @@ const STRATEGIES: StrategyDef[] = [
       },
       { label: "TD", budget: 5, positions: ["TD", "DST"] },
       { label: "PK", budget: 1, positions: ["K", "PK"] },
-      { label: "BENCH", budget: 7, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 7, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 3, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
     ],
   },
 
@@ -362,7 +364,7 @@ const STRATEGIES: StrategyDef[] = [
     priorityPositions: ["RB", "WR", "TE"],
     budgets: {
       STARS: { slots: 3, budget: 175, label: "Any pos — overall rank 1–20" },
-      REST: { slots: 13, budget: 75, label: "Fill all remaining slots" },
+      REST: { slots: 14, budget: 75, label: "Fill all remaining slots" },
     },
     slots: [
       { label: "QB", budget: 8, positions: ["QB"], note: "Stream" },
@@ -395,7 +397,7 @@ const STRATEGIES: StrategyDef[] = [
       { label: "PK", budget: 1, positions: ["K", "PK"] },
       {
         label: "BENCH",
-        budget: 8,
+        budget: 7,
         positions: ["RB", "WR", "TE"],
         note: "Upside",
       },
@@ -414,6 +416,7 @@ const STRATEGIES: StrategyDef[] = [
       { label: "BENCH", budget: 7, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
     ],
   },
 
@@ -433,7 +436,7 @@ const STRATEGIES: StrategyDef[] = [
       WR: { slots: 3, budget: 55, label: "2 WR + 1 FLEX" },
       TD: { slots: 1, budget: 5 },
       PK: { slots: 1, budget: 1 },
-      BENCH: { slots: 6, budget: 34 },
+      BENCH: { slots: 7, budget: 34 },
     },
     slots: [
       {
@@ -458,12 +461,13 @@ const STRATEGIES: StrategyDef[] = [
       { label: "FLEX", budget: 10, positions: ["WR"], note: "→ WR" },
       { label: "TD", budget: 5, positions: ["TD", "DST"] },
       { label: "PK", budget: 1, positions: ["K", "PK"] },
-      { label: "BENCH", budget: 7, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 6, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
     ],
   },
 
@@ -495,7 +499,7 @@ const STRATEGIES: StrategyDef[] = [
       FLEX: { slots: 2, budget: 33, label: "Best value available" },
       TD: { slots: 1, budget: 5 },
       PK: { slots: 1, budget: 1 },
-      BENCH: { slots: 6, budget: 18, label: "High upside" },
+      BENCH: { slots: 7, budget: 18, label: "High upside" },
     },
     slots: [
       { label: "QB", budget: 25, positions: ["QB"] },
@@ -520,7 +524,7 @@ const STRATEGIES: StrategyDef[] = [
       { label: "PK", budget: 1, positions: ["K", "PK"] },
       {
         label: "BENCH",
-        budget: 5,
+        budget: 4,
         positions: ["RB", "WR", "TE"],
         note: "Sleeper",
       },
@@ -544,6 +548,7 @@ const STRATEGIES: StrategyDef[] = [
       },
       { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
       { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
+      { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
     ],
   },
 ]
@@ -561,10 +566,11 @@ const CUSTOM_TEMPLATE_SLOTS: RosterSlot[] = [
   { label: "FLEX", budget: 13, positions: ["RB", "WR", "TE"] },
   { label: "TD", budget: 5, positions: ["TD", "DST"] },
   { label: "PK", budget: 1, positions: ["K", "PK"] },
-  { label: "BENCH", budget: 5, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
   { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
   { label: "BENCH", budget: 4, positions: ["RB", "WR", "TE"] },
   { label: "BENCH", budget: 3, positions: ["RB", "WR", "TE"] },
+  { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
   { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
   { label: "BENCH", budget: 1, positions: ["RB", "WR", "TE"] },
 ]
@@ -1220,15 +1226,15 @@ export function TemplatesClient({
             <div className="space-y-1.5 text-xs text-muted-foreground">
               <div className="flex justify-between">
                 <span>Total roster</span>
-                <span className="font-mono text-foreground">16 players</span>
+                <span className="font-mono text-foreground">17 players</span>
               </div>
               <div className="flex justify-between">
                 <span>Min spend (×$1)</span>
-                <span className="font-mono text-foreground">$16</span>
+                <span className="font-mono text-foreground">$17</span>
               </div>
               <div className="flex justify-between">
                 <span>Disposable</span>
-                <span className="font-mono text-foreground">$234</span>
+                <span className="font-mono text-foreground">$233</span>
               </div>
               {strategy.budgets.BENCH && (
                 <div className="flex justify-between">
