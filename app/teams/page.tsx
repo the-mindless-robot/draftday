@@ -2,9 +2,44 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import prisma from "@/lib/prisma"
+import { DollarSign, Users } from "lucide-react"
 
 const POS_ORDER: Record<string, number> = {
   QB: 0, RB: 1, WR: 2, TE: 3, K: 4, PK: 4, TD: 5, DST: 5,
+}
+
+// Mirrors ROSTER_SLOTS in my-team.tsx — 3pts for starter slots, 1pt for rest
+const SLOT_POINTS = [3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+const ROSTER_MAX = 33
+
+const POS_SLOT_ORDER: Record<string, number[]> = {
+  QB:  [0],
+  RB:  [1, 2, 6, 7, 10, 11, 12, 13, 14, 15, 16],
+  WR:  [3, 4, 6, 7, 10, 11, 12, 13, 14, 15, 16],
+  TE:  [5, 6, 7, 10, 11, 12, 13, 14, 15, 16],
+  K:   [9],
+  PK:  [9],
+  TD:  [8],
+  DST: [8],
+}
+
+function rosterScore(picks: { player: { pos: string | null }; positionalRank?: number | null }[]): number {
+  const filled = new Array(SLOT_POINTS.length).fill(false)
+  const sorted = [...picks].sort(
+    (a, b) => (a.positionalRank ?? 999) - (b.positionalRank ?? 999)
+  )
+  let score = 0
+  for (const pick of sorted) {
+    const pos = pick.player.pos?.toUpperCase() ?? ""
+    for (const idx of POS_SLOT_ORDER[pos] ?? []) {
+      if (!filled[idx]) {
+        filled[idx] = true
+        score += SLOT_POINTS[idx]
+        break
+      }
+    }
+  }
+  return score
 }
 
 function posColor(pos: string | null): string {
@@ -34,12 +69,13 @@ export default async function TeamsPage() {
 
   const teamsWithStats = teams.map((t) => {
     const spent = t.picks.reduce((sum, p) => sum + p.salary, 0)
+    const score = rosterScore(t.picks)
     const sortedPicks = [...t.picks].sort((a, b) => {
       const ao = POS_ORDER[a.player.pos?.toUpperCase() ?? ""] ?? 6
       const bo = POS_ORDER[b.player.pos?.toUpperCase() ?? ""] ?? 6
       return ao !== bo ? ao - bo : b.salary - a.salary
     })
-    return { ...t, spent, remaining: t.budget - spent, sortedPicks }
+    return { ...t, spent, remaining: t.budget - spent, score, sortedPicks }
   })
 
   return (
@@ -51,7 +87,8 @@ export default async function TeamsPage() {
           <SidebarInset className="overflow-auto">
             <div className="grid grid-cols-2 gap-3 p-4 xl:grid-cols-3 2xl:grid-cols-5">
               {teamsWithStats.map((team) => {
-                const pctUsed = Math.min((team.spent / team.budget) * 100, 100)
+                const pctSpent = Math.min((team.spent / team.budget) * 100, 100)
+                const pctRoster = Math.min((team.score / ROSTER_MAX) * 100, 100)
                 const over = team.spent > team.budget
 
                 return (
@@ -81,11 +118,31 @@ export default async function TeamsPage() {
                     </div>
 
                     {/* Budget bar */}
-                    <div className="mb-2.5 h-1 w-full overflow-hidden rounded-full bg-border/50">
-                      <div
-                        className={`h-full rounded-full transition-all ${over ? "bg-red-400" : "bg-primary/60"}`}
-                        style={{ width: `${pctUsed}%` }}
-                      />
+                    <div className="mb-1.5 flex items-center gap-1.5">
+                      <DollarSign className={`h-3 w-3 shrink-0 ${over ? "text-red-400" : "text-muted-foreground/50"}`} />
+                      <div className="flex-1 overflow-hidden rounded-full bg-border/50" style={{ height: 4 }}>
+                        <div
+                          className={`h-full rounded-full transition-all ${over ? "bg-red-400" : "bg-primary/60"}`}
+                          style={{ width: `${pctSpent}%` }}
+                        />
+                      </div>
+                      <span className="w-12 shrink-0 text-right font-mono text-[10px] text-muted-foreground/60">
+                        ${team.remaining}
+                      </span>
+                    </div>
+
+                    {/* Roster bar */}
+                    <div className="mb-2.5 flex items-center gap-1.5">
+                      <Users className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                      <div className="flex-1 overflow-hidden rounded-full bg-border/50" style={{ height: 4 }}>
+                        <div
+                          className="h-full rounded-full bg-emerald-500/60 transition-all"
+                          style={{ width: `${pctRoster}%` }}
+                        />
+                      </div>
+                      <span className="w-12 shrink-0 text-right font-mono text-[10px] text-muted-foreground/60">
+                        {team.score}/{ROSTER_MAX}
+                      </span>
                     </div>
 
                     {/* Pick list */}

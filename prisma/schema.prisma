@@ -161,7 +161,7 @@ model TeamSnapshot {
 
 model DraftTeam {
   id        String      @id @default(cuid())
-  name      String
+  name      String      @unique
   budget    Int         @default(250)
   isMyTeam  Boolean     @default(false) @map("is_my_team")
   picks     DraftPick[]

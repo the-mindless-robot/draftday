@@ -60,9 +60,22 @@ export async function POST(req: NextRequest) {
   }
 
   if (!team) {
-    team = await prisma.draftTeam.create({
-      data: { name: teamName },
+    // Rename the lowest-numbered placeholder to the real ESPN team name
+    const placeholder = await prisma.draftTeam.findFirst({
+      where: { name: { startsWith: "Team " } },
+      orderBy: { name: "asc" },
     })
+    if (placeholder) {
+      team = await prisma.draftTeam.update({
+        where: { id: placeholder.id },
+        data: { name: teamName },
+      })
+    } else {
+      return NextResponse.json(
+        { error: `Team not found and no placeholders remain: "${teamName}"` },
+        { status: 404, headers: cors }
+      )
+    }
   }
 
   // 3. Idempotent — skip if player already drafted
