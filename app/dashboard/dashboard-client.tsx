@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { extractLastName } from "@/lib/player-name"
 import { Star, User, Users, ListChecks, BarChart2 } from "lucide-react"
 import { fbgPlayerUrl } from "@/lib/fbg-url"
 import { RankingsTable } from "./rankings-table"
@@ -259,6 +261,8 @@ export function DashboardClient({
   players: RankedPlayer[]
   draftTeams: DraftTeamInfo[]
 }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [players, setPlayers] = useState(initialPlayers)
   const [draftTeams, setDraftTeams] = useState(initialDraftTeams)
   const [selectedPlayer, setSelectedPlayer] = useState<RankedPlayer | null>(
@@ -273,6 +277,25 @@ export function DashboardClient({
   const [draftingPlayer, setDraftingPlayer] = useState<RankedPlayer | null>(
     null
   )
+
+  useEffect(() => {
+    const nominee = searchParams.get("nominee")
+    if (!nominee) return
+    const last = extractLastName(nominee).toLowerCase()
+    const first = nominee.trim().split(/\s+/)[0].toLowerCase()
+    const match =
+      players.find((p) => p.name.toLowerCase() === nominee.toLowerCase()) ??
+      players.find((p) => {
+        const n = p.name.toLowerCase()
+        return n.includes(last) && n.includes(first)
+      }) ??
+      players.find((p) => p.name.toLowerCase().includes(last))
+    if (match) {
+      setSelectedPlayer(match)
+      setRightPanel("details")
+      router.replace("/dashboard")
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (!selectedPlayer) {
@@ -301,23 +324,8 @@ export function DashboardClient({
   useEffect(() => {
     const es = new EventSource("/api/draft/events")
     es.addEventListener("pick", refreshPicks)
-    es.addEventListener("nomination", (e: MessageEvent) => {
-      const playerName: string = e.data
-      const match =
-        players.find(
-          (p) => p.name.toLowerCase() === playerName.toLowerCase()
-        ) ??
-        players.find((p) => {
-          const last = playerName.trim().split(/\s+/).at(-1)?.toLowerCase() ?? ""
-          return last.length > 1 && p.name.toLowerCase().includes(last)
-        })
-      if (match) {
-        setSelectedPlayer(match)
-        setRightPanel("details")
-      }
-    })
     return () => es.close()
-  }, [refreshPicks, players])
+  }, [refreshPicks])
 
   // ── Draft handlers ────────────────────────────────────────────────────────
 
@@ -510,7 +518,7 @@ export function DashboardClient({
       </div>
       <div className="flex w-96 shrink-0 flex-col gap-3 overflow-y-auto">
         <div className="flex-1 overflow-y-auto rounded-xl bg-muted/50 p-4">
-          <div className="mb-3 flex items-center justify-between">
+<div className="mb-3 flex items-center justify-between">
             <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
               <button
                 onClick={() => setRightPanel("details")}

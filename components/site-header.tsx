@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator"
 import { useSidebar } from "@/components/ui/sidebar"
 import { PanelLeftIcon } from "lucide-react"
 import Link from "next/link"
+import { NominationBadge } from "@/components/nomination-badge"
 
 export function SiteHeader() {
   const { toggleSidebar } = useSidebar()
@@ -32,7 +33,7 @@ export function SiteHeader() {
             <Link href="/teams">Teams</Link>
           </Button>
         </div>
-        {/* <SearchForm className="w-full sm:ml-auto sm:w-auto" /> */}
+        <NominationBadge />
       </div>
     </header>
   )

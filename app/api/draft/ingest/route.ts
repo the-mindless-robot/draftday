@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import pickEmitter from "@/lib/pick-events"
+import { extractLastName } from "@/lib/player-name"
 
 // CORS required so the Chrome extension (running on ESPN's domain) can POST here
 const cors = {
@@ -26,19 +27,26 @@ export async function POST(req: NextRequest) {
   })
 
   if (!player) {
-    const parts = playerName.trim().split(/\s+/)
-    const firstName = parts[0]
-    const lastName = parts.at(-1)!
-    const candidates = await prisma.player.findMany({
-      where: { name: { contains: lastName, mode: "insensitive" } },
-      take: 10,
-    })
-    player =
-      candidates.find((p) =>
-        p.name.toLowerCase().includes(firstName.toLowerCase())
-      ) ??
-      candidates[0] ??
-      null
+    // D/ST: "Rams D/ST" → search pos="TD" where name contains "Rams"
+    if (playerName.toUpperCase().endsWith(" D/ST")) {
+      const nickname = playerName.slice(0, -5).trim()
+      player = await prisma.player.findFirst({
+        where: { pos: "TD", name: { contains: nickname, mode: "insensitive" } },
+      })
+    } else {
+      const firstName = playerName.trim().split(/\s+/)[0]
+      const lastName = extractLastName(playerName)
+      const candidates = await prisma.player.findMany({
+        where: { name: { contains: lastName, mode: "insensitive" } },
+        take: 10,
+      })
+      player =
+        candidates.find((p) =>
+          p.name.toLowerCase().includes(firstName.toLowerCase())
+        ) ??
+        candidates[0] ??
+        null
+    }
   }
 
   if (!player) {

@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -61,7 +62,9 @@ export default async function Page() {
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar />
           <SidebarInset className="overflow-hidden">
-            <DashboardClient players={players} draftTeams={draftTeams} />
+            <Suspense>
+              <DashboardClient players={players} draftTeams={draftTeams} />
+            </Suspense>
           </SidebarInset>
         </div>
       </SidebarProvider>
