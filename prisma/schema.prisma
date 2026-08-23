@@ -154,6 +154,7 @@ model TeamSnapshot {
   id        String   @id @default(cuid())
   name      String
   budgets   Json
+  isDefault Boolean  @default(false) @map("is_default")
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("team_snapshots")

@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState, useEffect, useCallback } from "react"
-import { X } from "lucide-react"
+import { useMemo, useState, useEffect, useCallback, useRef } from "react"
+import { X, Star } from "lucide-react"
 import { fbgPlayerUrl } from "@/lib/fbg-url"
 
 type DraftPickInfo = {
@@ -39,6 +39,7 @@ type TeamSnapshot = {
   id: string
   name: string
   budgets: number[]
+  isDefault: boolean
 }
 
 const ROSTER_SLOTS: RosterSlot[] = [
@@ -146,15 +147,28 @@ export function MyTeam({
   const [snapshots, setSnapshots] = useState<TeamSnapshot[]>([])
   const [saving, setSaving] = useState(false)
   const [maxOver, setMaxOver] = useState(5)
+  const defaultLoaded = useRef(false)
 
   const fetchSnapshots = useCallback(async () => {
     const res = await fetch("/api/team-snapshots")
-    if (res.ok) setSnapshots(await res.json())
+    if (!res.ok) return
+    const data: TeamSnapshot[] = await res.json()
+    setSnapshots(data)
+    if (!defaultLoaded.current) {
+      const def = data.find((s) => s.isDefault)
+      if (def) setBudgets(def.budgets)
+      defaultLoaded.current = true
+    }
   }, [])
 
   useEffect(() => {
     fetchSnapshots()
   }, [fetchSnapshots])
+
+  async function handleSetDefault(id: string) {
+    await fetch(`/api/team-snapshots/${id}`, { method: "PATCH" })
+    setSnapshots((prev) => prev.map((s) => ({ ...s, isDefault: s.id === id })))
+  }
 
   const suggestions = useMemo(() => {
     const draftedIds = new Set(myTeamPicks.map((p) => p.id))
@@ -244,15 +258,54 @@ export function MyTeam({
   const myListCount = players.filter((p) => p.flagged).length
   const hasContent = myListCount > 0 || myTeamPicks.length > 0
 
+  const snapshotsSection = snapshots.length > 0 && (
+    <div className="mt-3 flex flex-col gap-0.5">
+      {snapshots.map((s) => (
+        <div
+          key={s.id}
+          className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] hover:bg-muted/50 ${s.isDefault ? "bg-primary/5" : ""}`}
+        >
+          <button
+            onClick={() => handleSetDefault(s.id)}
+            title={s.isDefault ? "Default strategy" : "Set as default"}
+            className="shrink-0 transition-colors"
+          >
+            <Star
+              className={`h-3 w-3 ${s.isDefault ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30 hover:text-yellow-400"}`}
+            />
+          </button>
+          <span className="min-w-0 flex-1 truncate font-mono text-muted-foreground">
+            {s.name}
+          </span>
+          <button
+            onClick={() => handleLoad(s)}
+            className="shrink-0 text-[10px] text-muted-foreground/60 transition-colors hover:text-foreground"
+          >
+            Load
+          </button>
+          <button
+            onClick={() => handleDelete(s.id)}
+            className="shrink-0 text-muted-foreground/40 transition-colors hover:text-red-400"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+
   if (!hasContent) {
     return (
-      <div className="flex flex-col items-center justify-center gap-1.5 py-10 text-center">
-        <p className="text-xs font-medium text-muted-foreground">
-          No players on My List
-        </p>
-        <p className="text-[11px] text-muted-foreground/60">
-          Star players in the rankings to see suggestions here.
-        </p>
+      <div className="flex flex-col">
+        <div className="flex flex-col items-center justify-center gap-1.5 py-10 text-center">
+          <p className="text-xs font-medium text-muted-foreground">
+            No players on My List
+          </p>
+          <p className="text-[11px] text-muted-foreground/60">
+            Star players in the rankings to see suggestions here.
+          </p>
+        </div>
+        {snapshotsSection}
       </div>
     )
   }
@@ -432,33 +485,7 @@ export function MyTeam({
         )
       })}
 
-      {/* Saved snapshots */}
-      {snapshots.length > 0 && (
-        <div className="mt-3 flex flex-col gap-0.5">
-          {snapshots.map((s) => (
-            <div
-              key={s.id}
-              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] hover:bg-muted/50"
-            >
-              <span className="min-w-0 flex-1 truncate font-mono text-muted-foreground">
-                {s.name}
-              </span>
-              <button
-                onClick={() => handleLoad(s)}
-                className="shrink-0 text-[10px] text-muted-foreground/60 transition-colors hover:text-foreground"
-              >
-                Load
-              </button>
-              <button
-                onClick={() => handleDelete(s.id)}
-                className="shrink-0 text-muted-foreground/40 transition-colors hover:text-red-400"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      {snapshotsSection}
     </div>
   )
 }

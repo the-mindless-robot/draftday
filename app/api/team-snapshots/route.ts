@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma"
 export async function GET() {
   const snapshots = await prisma.teamSnapshot.findMany({
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, budgets: true, createdAt: true },
+    select: { id: true, name: true, budgets: true, isDefault: true, createdAt: true },
   })
   return NextResponse.json(snapshots)
 }

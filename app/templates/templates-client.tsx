@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { Star, User, ListChecks } from "lucide-react"
 import { PlayerDetail } from "@/app/dashboard/player-detail"
@@ -13,6 +13,7 @@ type TeamSnapshot = {
   id: string
   name: string
   budgets: number[]
+  isDefault: boolean
 }
 
 type DraftPickInfo = {
@@ -937,9 +938,21 @@ export function TemplatesClient({
   const [saveName, setSaveName] = useState("")
   const [savingTemplate, setSavingTemplate] = useState(false)
 
+  const defaultLoaded = useRef(false)
+
   const fetchSnapshots = useCallback(async () => {
     const res = await fetch("/api/team-snapshots")
-    if (res.ok) setSnapshots(await res.json())
+    if (!res.ok) return
+    const data: TeamSnapshot[] = await res.json()
+    setSnapshots(data)
+    if (!defaultLoaded.current) {
+      defaultLoaded.current = true
+      const def = data.find((s) => s.isDefault)
+      if (def) {
+        setCustomBudgets(def.budgets)
+        setStrategyId(`snapshot:${def.id}`)
+      }
+    }
   }, [])
 
   useEffect(() => { fetchSnapshots() }, [fetchSnapshots])
