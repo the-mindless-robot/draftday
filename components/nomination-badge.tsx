@@ -47,8 +47,8 @@ export function NominationBadge() {
   if (!nomination) return null
 
   function handleClick() {
-    const url = `/dashboard?nominee=${encodeURIComponent(nomination!.playerName)}`
-    router.push(url)
+    const base = pathname === "/templates" ? "/templates" : "/dashboard"
+    router.push(`${base}?nominee=${encodeURIComponent(nomination!.playerName)}`)
   }
 
   const posColor: Record<string, string> = {

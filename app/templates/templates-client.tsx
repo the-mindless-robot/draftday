@@ -1,11 +1,15 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Star, User, ListChecks } from "lucide-react"
+import { Star, User, ListChecks, BarChart2 } from "lucide-react"
 import { PlayerDetail } from "@/app/dashboard/player-detail"
 import { MyList } from "@/app/dashboard/my-list"
 import { DraftLog } from "@/app/dashboard/draft-log"
+import { DraftAnalytics } from "@/app/dashboard/draft-analytics"
+import type { RankedPlayer } from "@/app/dashboard/dashboard-client"
+import { extractLastName } from "@/lib/player-name"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -56,6 +60,7 @@ type Player = {
   scEspn200: string | null
   fbgRankDelta: number | null
   espnRankDelta: number | null
+  lastYearSalary: number | null
   flagged: boolean
   targeted: boolean
 }
@@ -163,13 +168,14 @@ function getSlotPlayers(
   count = 3,
   exclude: Set<string> = new Set(),
   sortFn?: (budget: number) => (a: Player, b: Player) => number,
-  maxAbove = 15,
-  maxBelow = 20
+  maxAbove = 3,
+  maxBelow = 5
 ): Player[] {
   const posSet = new Set(positions.map((p) => p.toUpperCase()))
 
   const eligible = players.filter((p) => {
     if (exclude.has(p.id)) return false
+    if (p.draftPick) return false
     const pos = p.pos?.toUpperCase() ?? ""
     if (posSet.has("TD") || posSet.has("DST")) {
       if (pos === "TD" || pos === "DST" || pos === "D/ST") return true
@@ -588,6 +594,79 @@ const CUSTOM_STRATEGY: StrategyDef = {
   slots: CUSTOM_TEMPLATE_SLOTS,
 }
 
+// ── Live Draft Mode ───────────────────────────────────────────────────────────
+
+type LivePick = Player & { draftPick: DraftPickInfo }
+
+const CASCADE_STEPS: { label: string; floor: number; limit: number }[] = [
+  { label: "BENCH", floor: 3, limit: 4 },
+  { label: "BENCH", floor: 1, limit: 3 },
+  { label: "TD",    floor: 2, limit: Infinity },
+  { label: "PK",    floor: 1, limit: Infinity },
+  { label: "K",     floor: 1, limit: Infinity },
+  { label: "FLEX",  floor: 2, limit: Infinity },
+  { label: "TE",    floor: 3, limit: Infinity },
+  { label: "QB",    floor: 3, limit: Infinity },
+  { label: "RB",    floor: 5, limit: Infinity },
+  { label: "WR",    floor: 5, limit: Infinity },
+]
+
+function applyBudgetCascade(
+  budgets: number[],
+  slots: RosterSlot[],
+  filledIndices: Set<number>,
+  overage: number
+): number[] {
+  const result = [...budgets]
+  let remaining = overage
+  for (const { label, floor, limit } of CASCADE_STEPS) {
+    if (remaining <= 0) break
+    let count = 0
+    const candidates = slots
+      .map((s, i) => ({ i, budget: result[i], slotLabel: s.label }))
+      .filter(({ i, budget, slotLabel }) =>
+        !filledIndices.has(i) && slotLabel === label && budget > floor
+      )
+      .sort((a, b) => b.budget - a.budget)
+    for (const { i, budget } of candidates) {
+      if (remaining <= 0 || count >= limit) break
+      result[i] = floor
+      remaining -= budget - floor
+      count++
+    }
+  }
+  return result
+}
+
+function assignPicksToSlots(
+  slots: RosterSlot[],
+  picks: LivePick[]
+): Map<number, LivePick> {
+  const assignments = new Map<number, LivePick>()
+  const usedIds = new Set<string>()
+
+  const posMatch = (slot: RosterSlot, pick: LivePick) =>
+    slot.positions.some((pos) => {
+      const p = pos.toUpperCase()
+      const pp = pick.pos?.toUpperCase() ?? ""
+      return p === pp || (p === "TD" && (pp === "TD" || pp === "DST"))
+    })
+
+  const tryAssign = (indices: number[]) => {
+    for (const i of indices) {
+      const pick = picks.find((p) => !usedIds.has(p.id) && posMatch(slots[i], p))
+      if (pick) { assignments.set(i, pick); usedIds.add(pick.id) }
+    }
+  }
+
+  const all = slots.map((_, i) => i)
+  tryAssign(all.filter((i) => !["FLEX", "BENCH"].includes(slots[i].label)))
+  tryAssign(all.filter((i) => slots[i].label === "FLEX"))
+  tryAssign(all.filter((i) => slots[i].label === "BENCH"))
+
+  return assignments
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function BudgetBar({ posKey, data }: { posKey: string; data: SlotBudget }) {
@@ -717,6 +796,8 @@ function SlotRow({
   selectedPlayerId,
   onPlayerSelect,
   onBudgetChange,
+  lockedPick,
+  plannedBudget,
 }: {
   slot: RosterSlot
   players: Player[]
@@ -724,11 +805,18 @@ function SlotRow({
   selectedPlayerId: string | null
   onPlayerSelect: (p: Player) => void
   onBudgetChange?: (v: number) => void
+  lockedPick?: Player
+  plannedBudget?: number
 }) {
   const colors = POS_COLORS[slot.label] ?? POS_COLORS.BENCH
 
   return (
-    <div className="flex items-stretch gap-3 border-b border-border/20 px-3 py-2 last:border-0">
+    <div
+      className={cn(
+        "flex items-stretch gap-3 border-b border-border/20 px-3 py-2 last:border-0",
+        lockedPick && "bg-green-400/5"
+      )}
+    >
       {/* Slot label */}
       <div className="flex w-16 shrink-0 items-start gap-1 pt-1">
         <span
@@ -740,18 +828,29 @@ function SlotRow({
         >
           {slot.label}
         </span>
-        {slot.isPriority && (
-          <span
-            className={cn("mt-1 shrink-0 text-[9px] leading-none", accentClass)}
-          >
+        {lockedPick ? (
+          <span className="mt-1 shrink-0 text-[9px] leading-none text-green-400">
+            ✓
+          </span>
+        ) : slot.isPriority ? (
+          <span className={cn("mt-1 shrink-0 text-[9px] leading-none", accentClass)}>
             ★
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Budget + note */}
       <div className="flex w-20 shrink-0 flex-col justify-start gap-0.5 pt-1">
-        {onBudgetChange ? (
+        {lockedPick ? (
+          <>
+            <span className="font-mono text-xs font-semibold text-green-400">
+              ${slot.budget}
+            </span>
+            <span className="text-[10px] leading-tight text-green-400/50">
+              paid
+            </span>
+          </>
+        ) : onBudgetChange ? (
           <div className="flex items-center gap-0.5">
             <span className="font-mono text-xs text-muted-foreground">$</span>
             <input
@@ -765,30 +864,66 @@ function SlotRow({
             />
           </div>
         ) : (
-          <span className="font-mono text-xs font-semibold">
-            ${slot.budget}
-          </span>
+          <span className="font-mono text-xs font-semibold">${slot.budget}</span>
         )}
-        {slot.note && (
+        {!lockedPick && slot.note && (
           <span className="text-[10px] leading-tight text-muted-foreground">
             {slot.note}
           </span>
         )}
       </div>
 
-      {/* 3 player cards */}
+      {/* Player cards */}
       <div className="flex min-w-0 flex-1 gap-2">
-        {players.map((p) => (
-          <PlayerCard
-            key={p.id}
-            player={p}
-            isSelected={p.id === selectedPlayerId}
-            onClick={onPlayerSelect}
-          />
-        ))}
-        {Array.from({ length: Math.max(0, 3 - players.length) }).map((_, i) => (
-          <EmptyCard key={i} />
-        ))}
+        {lockedPick ? (
+          <>
+            <div className="min-w-0 flex-1 flex flex-col gap-1">
+              <PlayerCard
+                player={lockedPick}
+                isSelected={lockedPick.id === selectedPlayerId}
+                onClick={onPlayerSelect}
+              />
+              {lockedPick.draftPick && (() => {
+                const paid = lockedPick.draftPick.salary
+                const budget = plannedBudget ?? slot.budget
+                const diff = budget - paid
+                return (
+                  <div className="flex gap-3 px-1 font-mono text-[10px]">
+                    <span>
+                      ${paid}
+                      <span className="ml-0.5 text-muted-foreground/50">paid</span>
+                    </span>
+                    <span className="text-muted-foreground/50">
+                      ${budget}
+                      <span className="ml-0.5 text-muted-foreground/40">bgt</span>
+                    </span>
+                    <span className={diff >= 0 ? "text-green-400" : "text-red-400"}>
+                      {diff > 0 ? "+" : ""}{diff}
+                    </span>
+                  </div>
+                )
+              })()}
+            </div>
+            <EmptyCard />
+            <EmptyCard />
+          </>
+        ) : (
+          <>
+            {players.map((p) => (
+              <PlayerCard
+                key={p.id}
+                player={p}
+                isSelected={p.id === selectedPlayerId}
+                onClick={onPlayerSelect}
+              />
+            ))}
+            {Array.from({ length: Math.max(0, 3 - players.length) }).map(
+              (_, i) => (
+                <EmptyCard key={i} />
+              )
+            )}
+          </>
+        )}
       </div>
     </div>
   )
@@ -853,28 +988,63 @@ export function TemplatesClient({
   players: Player[]
   draftTeams: DraftTeamInfo[]
 }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [players, setPlayers] = useState(initialPlayers)
   const [strategyId, setStrategyId] = useState(STRATEGIES[0].id)
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
-  const [maxAbove, setMaxAbove] = useState(15)
-  const [maxBelow, setMaxBelow] = useState(20)
+  const [maxAbove, setMaxAbove] = useState(3)
+  const [maxBelow, setMaxBelow] = useState(5)
   const [customBudgets, setCustomBudgets] = useState<number[]>(() =>
     CUSTOM_TEMPLATE_SLOTS.map((s) => s.budget)
   )
-  const [rightPanel, setRightPanel] = useState<"details" | "my-list" | "picks">("details")
+  const [rightPanel, setRightPanel] = useState<
+    "details" | "my-list" | "picks" | "analytics"
+  >("details")
+  const [liveMode, setLiveMode] = useState(false)
+
+  useEffect(() => {
+    const nominee = searchParams.get("nominee")
+    if (!nominee) return
+    const last = extractLastName(nominee).toLowerCase()
+    const first = nominee.trim().split(/\s+/)[0].toLowerCase()
+    const match =
+      players.find((p) => p.name.toLowerCase() === nominee.toLowerCase()) ??
+      players.find((p) => {
+        const n = p.name.toLowerCase()
+        return n.includes(last) && n.includes(first)
+      }) ??
+      players.find((p) => p.name.toLowerCase().includes(last))
+    if (match) {
+      setSelectedPlayer(match)
+      setRightPanel("details")
+      router.replace("/templates")
+    }
+  }, [searchParams])
 
   async function handleFlag(player: Player) {
     const wasFlagged = player.flagged
     setPlayers((prev) =>
       prev.map((p) =>
         p.id === player.id
-          ? { ...p, flagged: !wasFlagged, ...(wasFlagged && { targeted: false }) }
+          ? {
+              ...p,
+              flagged: !wasFlagged,
+              ...(wasFlagged && { targeted: false }),
+            }
           : p
       )
     )
     if (selectedPlayer?.id === player.id) {
       setSelectedPlayer((prev) =>
-        prev ? { ...prev, flagged: !wasFlagged, ...(wasFlagged && { targeted: false }) } : null
+        prev
+          ? {
+              ...prev,
+              flagged: !wasFlagged,
+              ...(wasFlagged && { targeted: false }),
+            }
+          : null
       )
     }
     try {
@@ -882,7 +1052,9 @@ export function TemplatesClient({
     } catch {
       setPlayers((prev) =>
         prev.map((p) =>
-          p.id === player.id ? { ...p, flagged: wasFlagged, targeted: player.targeted } : p
+          p.id === player.id
+            ? { ...p, flagged: wasFlagged, targeted: player.targeted }
+            : p
         )
       )
     }
@@ -894,13 +1066,23 @@ export function TemplatesClient({
     setPlayers((prev) =>
       prev.map((p) =>
         p.id === player.id
-          ? { ...p, targeted: !wasTargeted, ...(!wasTargeted && { flagged: true }) }
+          ? {
+              ...p,
+              targeted: !wasTargeted,
+              ...(!wasTargeted && { flagged: true }),
+            }
           : p
       )
     )
     if (selectedPlayer?.id === player.id) {
       setSelectedPlayer((prev) =>
-        prev ? { ...prev, targeted: !wasTargeted, ...(!wasTargeted && { flagged: true }) } : null
+        prev
+          ? {
+              ...prev,
+              targeted: !wasTargeted,
+              ...(!wasTargeted && { flagged: true }),
+            }
+          : null
       )
     }
     try {
@@ -908,13 +1090,19 @@ export function TemplatesClient({
     } catch {
       setPlayers((prev) =>
         prev.map((p) =>
-          p.id === player.id ? { ...p, targeted: wasTargeted, flagged: wasFlagged } : p
+          p.id === player.id
+            ? { ...p, targeted: wasTargeted, flagged: wasFlagged }
+            : p
         )
       )
     }
   }
 
-  async function handleEditPick(pickId: string, teamId: string, salary: number) {
+  async function handleEditPick(
+    pickId: string,
+    teamId: string,
+    salary: number
+  ) {
     const res = await fetch(`/api/draft/picks/${pickId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -922,14 +1110,18 @@ export function TemplatesClient({
     })
     const updated = (await res.json()) as DraftPickInfo
     setPlayers((prev) =>
-      prev.map((p) => (p.draftPick?.id === pickId ? { ...p, draftPick: updated } : p))
+      prev.map((p) =>
+        p.draftPick?.id === pickId ? { ...p, draftPick: updated } : p
+      )
     )
   }
 
   async function handleDeletePick(pickId: string) {
     await fetch(`/api/draft/picks/${pickId}`, { method: "DELETE" })
     setPlayers((prev) =>
-      prev.map((p) => (p.draftPick?.id === pickId ? { ...p, draftPick: null } : p))
+      prev.map((p) =>
+        p.draftPick?.id === pickId ? { ...p, draftPick: null } : p
+      )
     )
   }
 
@@ -937,6 +1129,22 @@ export function TemplatesClient({
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [saveName, setSaveName] = useState("")
   const [savingTemplate, setSavingTemplate] = useState(false)
+
+  const refreshPicks = useCallback(async () => {
+    const res = await fetch("/api/draft/picks")
+    if (!res.ok) return
+    const data: { playerId: string; pick: DraftPickInfo }[] = await res.json()
+    const pickMap = new Map(data.map((d) => [d.playerId, d.pick]))
+    setPlayers((prev) =>
+      prev.map((p) => ({ ...p, draftPick: pickMap.get(p.id) ?? null }))
+    )
+  }, [])
+
+  useEffect(() => {
+    const es = new EventSource("/api/draft/events")
+    es.addEventListener("pick", refreshPicks)
+    return () => es.close()
+  }, [refreshPicks])
 
   const defaultLoaded = useRef(false)
 
@@ -955,7 +1163,9 @@ export function TemplatesClient({
     }
   }, [])
 
-  useEffect(() => { fetchSnapshots() }, [fetchSnapshots])
+  useEffect(() => {
+    fetchSnapshots()
+  }, [fetchSnapshots])
 
   async function handleSaveTemplate() {
     if (!saveName.trim()) return
@@ -981,11 +1191,21 @@ export function TemplatesClient({
   }
 
   const draftedPlayers = useMemo(
-    () => players.filter((p) => p.draftPick !== null) as (Player & { draftPick: DraftPickInfo })[],
+    () =>
+      players.filter((p) => p.draftPick !== null) as (Player & {
+        draftPick: DraftPickInfo
+      })[],
     [players]
   )
   const flaggedCount = players.filter((p) => p.flagged).length
   const picksCount = draftedPlayers.length
+
+  const myTeamPicks = useMemo(
+    () => players.filter((p): p is LivePick => p.draftPick?.team.isMyTeam === true),
+    [players]
+  )
+  const amountSpent = myTeamPicks.reduce((s, p) => s + p.draftPick.salary, 0)
+  const remainingBudget = TOTAL_BUDGET - amountSpent
 
   const isSnapshot = strategyId.startsWith("snapshot:")
   const isCustom = strategyId === "custom" || isSnapshot
@@ -999,6 +1219,51 @@ export function TemplatesClient({
         budget: customBudgets[i] ?? slot.budget,
       }))
     : strategy.slots
+
+  // ── Live Draft computations ───────────────────────────────────────────────
+  let liveAssignments = new Map<number, LivePick>()
+  let liveBudgets: number[] = []
+  let liveSlotPlayers: Player[][] = []
+
+  if (liveMode) {
+    liveAssignments = assignPicksToSlots(activeSlots, myTeamPicks)
+    const filledIndices = new Set(liveAssignments.keys())
+
+    const unfilledBudgets = activeSlots.map((s, i) =>
+      filledIndices.has(i) ? 0 : s.budget
+    )
+    const unfilledTotal = unfilledBudgets.reduce((a, b) => a + b, 0)
+    const overage = Math.max(0, unfilledTotal - remainingBudget)
+    const adjustedBudgets =
+      overage > 0
+        ? applyBudgetCascade(unfilledBudgets, activeSlots, filledIndices, overage)
+        : unfilledBudgets
+
+    liveBudgets = activeSlots.map((_, i) =>
+      filledIndices.has(i)
+        ? liveAssignments.get(i)!.draftPick.salary
+        : adjustedBudgets[i]
+    )
+
+    const used = new Set<string>(
+      [...liveAssignments.values()].map((p) => p.id)
+    )
+    liveSlotPlayers = activeSlots.map((slot, i) => {
+      if (liveAssignments.has(i)) return []
+      const result = getSlotPlayers(
+        players,
+        slot.positions,
+        liveBudgets[i],
+        3,
+        used,
+        strategy.slotSortFn,
+        maxAbove,
+        maxBelow
+      )
+      result.forEach((p) => used.add(p.id))
+      return result
+    })
+  }
 
   const displayBudgets: Record<string, SlotBudget> = isCustom
     ? (() => {
@@ -1091,12 +1356,16 @@ export function TemplatesClient({
           className="rounded-lg border border-border bg-muted px-3 py-2 font-mono text-sm text-foreground transition-colors hover:bg-muted/80 focus:outline-none"
         >
           {STRATEGIES.map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
           ))}
           {snapshots.length > 0 && (
             <optgroup label="My Templates">
               {snapshots.map((s) => (
-                <option key={s.id} value={`snapshot:${s.id}`}>{s.name}</option>
+                <option key={s.id} value={`snapshot:${s.id}`}>
+                  {s.name}
+                </option>
               ))}
             </optgroup>
           )}
@@ -1121,7 +1390,10 @@ export function TemplatesClient({
               onChange={(e) => setSaveName(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSaveTemplate()
-                if (e.key === "Escape") { setShowSaveInput(false); setSaveName("") }
+                if (e.key === "Escape") {
+                  setShowSaveInput(false)
+                  setSaveName("")
+                }
               }}
               placeholder="Template name…"
               className="rounded-lg border border-border bg-background px-2.5 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
@@ -1134,7 +1406,10 @@ export function TemplatesClient({
               {savingTemplate ? "Saving…" : "Save"}
             </button>
             <button
-              onClick={() => { setShowSaveInput(false); setSaveName("") }}
+              onClick={() => {
+                setShowSaveInput(false)
+                setSaveName("")
+              }}
               className="rounded-lg border border-border/50 px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               Cancel
@@ -1148,6 +1423,17 @@ export function TemplatesClient({
             Save As Template
           </button>
         )}
+        <button
+          onClick={() => setLiveMode((v) => !v)}
+          className={cn(
+            "ml-auto rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
+            liveMode
+              ? "border-green-400/40 bg-green-400/10 text-green-400 hover:bg-green-400/20"
+              : "border-border/60 bg-muted/30 text-foreground/70 hover:bg-muted/50"
+          )}
+        >
+          {liveMode ? "● Live" : "Live Draft"}
+        </button>
       </div>
 
       {/* ── Main Layout ── */}
@@ -1267,21 +1553,46 @@ export function TemplatesClient({
 
         {/* Right Column — Roster Sheet */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-muted/50">
+          {/* Live mode status bar */}
+          {liveMode && (
+            <div className="flex shrink-0 items-center justify-between border-b border-green-400/20 bg-green-400/5 px-3 py-1.5 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
+                <span className="font-semibold text-green-400">Live Draft</span>
+                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">
+                  {myTeamPicks.length} picked
+                </span>
+              </span>
+              <span className="font-mono text-muted-foreground">
+                <span className="text-foreground">${amountSpent}</span> spent ·{" "}
+                <span
+                  className={
+                    remainingBudget < 0 ? "text-red-400" : "text-green-400"
+                  }
+                >
+                  ${remainingBudget}
+                </span>{" "}
+                remaining
+              </span>
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex shrink-0 items-center gap-3 border-b border-border px-3 py-2">
             <span className="w-16 shrink-0 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
               Slot
             </span>
             <span className="w-20 shrink-0 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
-              Budget
+              {liveMode ? "Paid / Budget" : "Budget"}
             </span>
             <div className="flex min-w-0 flex-1 gap-2">
-              {["Option 1", "Option 2", "Option 3"].map((label) => (
+              {["Pick", "Option 1", "Option 2"].map((label) => (
                 <span
                   key={label}
                   className="flex-1 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase"
                 >
-                  {label}
+                  {liveMode ? label : label === "Pick" ? "Option 1" : label}
                 </span>
               ))}
             </div>
@@ -1289,27 +1600,38 @@ export function TemplatesClient({
 
           {/* Slot Rows */}
           <div className="flex-1 overflow-y-auto">
-            {activeSlots.map((slot, i) => (
-              <SlotRow
-                key={`${slot.label}-${i}`}
-                slot={slot}
-                players={slotPlayers[i]}
-                accentClass={strategy.accentClass}
-                selectedPlayerId={selectedPlayer?.id ?? null}
-                onPlayerSelect={setSelectedPlayer}
-                onBudgetChange={
-                  isCustom
-                    ? (v) => {
-                        setCustomBudgets((prev) => {
-                          const next = [...prev]
-                          next[i] = v
-                          return next
-                        })
-                      }
-                    : undefined
-                }
-              />
-            ))}
+            {activeSlots.map((slot, i) => {
+              const lockedPick = liveMode ? liveAssignments.get(i) : undefined
+              const displaySlot = liveMode
+                ? { ...slot, budget: liveBudgets[i] ?? slot.budget }
+                : slot
+              const displayPlayers = liveMode
+                ? liveSlotPlayers[i] ?? []
+                : slotPlayers[i]
+              return (
+                <SlotRow
+                  key={`${slot.label}-${i}`}
+                  slot={displaySlot}
+                  players={displayPlayers}
+                  accentClass={strategy.accentClass}
+                  selectedPlayerId={selectedPlayer?.id ?? null}
+                  onPlayerSelect={setSelectedPlayer}
+                  lockedPick={lockedPick}
+                  plannedBudget={liveMode ? activeSlots[i].budget : undefined}
+                  onBudgetChange={
+                    !liveMode && isCustom
+                      ? (v) => {
+                          setCustomBudgets((prev) => {
+                            const next = [...prev]
+                            next[i] = v
+                            return next
+                          })
+                        }
+                      : undefined
+                  }
+                />
+              )
+            })}
           </div>
         </div>
 
@@ -1340,7 +1662,7 @@ export function TemplatesClient({
                 >
                   <Star className="h-3.5 w-3.5" />
                   {flaggedCount > 0 && (
-                    <span className="absolute top-0.5 right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-yellow-400 px-0.5 py-px text-[8px] font-bold leading-none text-black">
+                    <span className="absolute top-0.5 right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-yellow-400 px-0.5 py-px text-[8px] leading-none font-bold text-black">
                       {flaggedCount}
                     </span>
                   )}
@@ -1356,16 +1678,31 @@ export function TemplatesClient({
                 >
                   <ListChecks className="h-3.5 w-3.5" />
                   {picksCount > 0 && (
-                    <span className="absolute top-0.5 right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 py-px text-[8px] font-bold leading-none text-primary-foreground">
+                    <span className="absolute top-0.5 right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 py-px text-[8px] leading-none font-bold text-primary-foreground">
                       {picksCount}
                     </span>
                   )}
+                </button>
+                <button
+                  onClick={() => setRightPanel("analytics")}
+                  title="Analytics"
+                  className={`relative flex min-w-12 items-center justify-center rounded p-1.5 transition-colors ${
+                    rightPanel === "analytics"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <BarChart2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
 
             <div className={rightPanel !== "details" ? "hidden" : ""}>
-              <PlayerDetail player={selectedPlayer} globalMax={globalMax} rankingHistory={null} />
+              <PlayerDetail
+                player={selectedPlayer}
+                globalMax={globalMax}
+                rankingHistory={null}
+              />
             </div>
             <div className={rightPanel !== "my-list" ? "hidden" : ""}>
               <MyList
@@ -1392,6 +1729,9 @@ export function TemplatesClient({
                 onEdit={handleEditPick}
                 onDelete={handleDeletePick}
               />
+            </div>
+            <div className={rightPanel !== "analytics" ? "hidden" : ""}>
+              <DraftAnalytics players={players as unknown as RankedPlayer[]} />
             </div>
           </div>
           {rightPanel === "details" && selectedPlayer && (

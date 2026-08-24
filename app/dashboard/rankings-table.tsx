@@ -96,7 +96,6 @@ function parseSalary(val: string | null): number | null {
   return isNaN(n) ? null : n
 }
 
-
 function posColor(pos: string | null): string {
   switch (pos?.toUpperCase()) {
     case "QB":
@@ -362,19 +361,6 @@ const columns: ColumnDef<RankedPlayer>[] = [
     },
   },
   {
-    id: "last_year_salary",
-    header: ({ column }) => <SortableHeader column={column} label="Last" />,
-    accessorFn: (row) => row.lastYearSalary,
-    cell: ({ row }) => {
-      const v = row.original.lastYearSalary
-      return (
-        <span className={v != null ? "font-mono text-muted-foreground" : "text-muted-foreground/40"}>
-          {v != null ? `$${v}` : "—"}
-        </span>
-      )
-    },
-  },
-  {
     id: "estimate",
     header: ({ column }) => <SortableHeader column={column} label="$" />,
     accessorFn: (row) => {
@@ -405,6 +391,25 @@ const columns: ColumnDef<RankedPlayer>[] = [
       if (base == null) return <span>—</span>
       const high = Math.round(base * 1.25)
       return <span>{`$${high} - $${base}`}</span>
+    },
+  },
+  {
+    id: "last_year_salary",
+    header: ({ column }) => <SortableHeader column={column} label="Last" />,
+    accessorFn: (row) => row.lastYearSalary,
+    cell: ({ row }) => {
+      const v = row.original.lastYearSalary
+      return (
+        <span
+          className={
+            v != null
+              ? "font-mono text-muted-foreground"
+              : "text-muted-foreground/40"
+          }
+        >
+          {v != null ? `$${v}` : "—"}
+        </span>
+      )
     },
   },
   {
@@ -485,7 +490,9 @@ export function RankingsTable({
 
   useEffect(() => {
     if (!nominatedPlayerId) return
-    const el = scrollRef.current?.querySelector(`[data-player-id="${nominatedPlayerId}"]`)
+    const el = scrollRef.current?.querySelector(
+      `[data-player-id="${nominatedPlayerId}"]`
+    )
     el?.scrollIntoView({ behavior: "smooth", block: "center" })
   }, [nominatedPlayerId])
 
@@ -564,7 +571,7 @@ export function RankingsTable({
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Filter by name…"
-            className="h-7 pl-7 pr-7 text-xs"
+            className="h-7 pr-7 pl-7 text-xs"
           />
           {globalFilter && (
             <button
@@ -635,7 +642,7 @@ export function RankingsTable({
                       "cursor-pointer",
                       row.original.draftPick && "opacity-40",
                       row.original.id === nominatedPlayerId &&
-                        "outline outline-primary/60 bg-primary/10"
+                        "bg-primary/10 outline outline-primary/60"
                     )}
                     onClick={() => onPlayerSelect?.(row.original)}
                   >
