@@ -3,7 +3,19 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
-type Nomination = { playerName: string; team: string; pos: string }
+type Nomination = {
+  playerName: string
+  team: string
+  pos: string
+  scFbg250: string | null
+  scEspn200: string | null
+}
+
+function parseSalary(val: string | null): number | null {
+  if (!val) return null
+  const n = parseFloat(val.replace(/[^0-9.]/g, ""))
+  return isNaN(n) ? null : n
+}
 
 async function fetchNomination(): Promise<Nomination | null> {
   try {
@@ -48,6 +60,10 @@ export function NominationBadge() {
     PK: "text-purple-400",
   }
 
+  const fbg = parseSalary(nomination.scFbg250)
+  const espn = parseSalary(nomination.scEspn200)
+  const espnEst = espn != null ? Math.round(espn * 1.25) : null
+
   return (
     <button
       onClick={handleClick}
@@ -60,6 +76,13 @@ export function NominationBadge() {
       <span className="font-semibold text-foreground">{nomination.playerName}</span>
       {nomination.team && (
         <span className="text-muted-foreground shrink-0">{nomination.team}</span>
+      )}
+      {(fbg != null || espnEst != null) && (
+        <span className="shrink-0 font-mono text-[11px] text-muted-foreground/70">
+          {fbg != null ? `$${fbg.toFixed(0)}` : "—"}
+          {" / "}
+          {espnEst != null ? `$${espnEst}` : "—"}
+        </span>
       )}
     </button>
   )

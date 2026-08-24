@@ -38,6 +38,7 @@ export default async function Page() {
         scFbg250: true,
         scFbgScaled: true,
         scEspn200: true,
+        lastYearSalary: true,
         draftPick: {
           select: {
             id: true,

@@ -60,6 +60,7 @@ export type RankedPlayer = {
   scFbg250: string | null
   scFbgScaled: string | null
   scEspn200: string | null
+  lastYearSalary: number | null
   fbgRankDelta: number | null
   espnRankDelta: number | null
   flagged: boolean
@@ -75,8 +76,9 @@ function parseSalary(val: string | null): number | null {
   return isNaN(n) ? null : n
 }
 
-function fbgAvg(p: RankedPlayer): number | null {
-  return parseSalary(p.scFbg250)
+function espnEst(p: RankedPlayer): number | null {
+  const base = parseSalary(p.scEspn200)
+  return base != null ? Math.round(base * 1.25) : null
 }
 
 function posColor(pos: string | null): string {
@@ -110,13 +112,26 @@ function SimilarPlayers({
       <p className="mb-2 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
         {label}
       </p>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {players.map((p) => {
-          const avg = fbgAvg(p)
+          const est = espnEst(p)
+          const fbg = parseSalary(p.scFbg250)
+          const diff = fbg != null && est != null ? fbg - est : null
+          const diffColor =
+            diff == null
+              ? "text-muted-foreground"
+              : diff > 0
+                ? "text-green-400"
+                : diff < 0
+                  ? "text-red-400"
+                  : "text-muted-foreground"
           return (
             <div key={p.id} className="flex items-center gap-2 text-xs">
+              <span className="w-7 shrink-0 font-mono text-muted-foreground">
+                #{p.overallRank ?? "—"}
+              </span>
               <span
-                className={`w-10 shrink-0 font-mono font-semibold ${posColor(p.pos)}`}
+                className={`w-9 shrink-0 font-mono font-semibold ${posColor(p.pos)}`}
               >
                 {p.pos}
                 {p.positionalRank ?? ""}
@@ -132,12 +147,21 @@ function SimilarPlayers({
                   <span className="text-muted-foreground"> {p.team}</span>
                 ) : null}
               </a>
-              <span className="shrink-0 font-mono text-muted-foreground">
-                #{p.overallRank ?? "—"}
+              <span className="shrink-0 font-mono text-[11px]">
+                {est != null ? `$${est}` : "—"}
+                <span className="ml-0.5 text-[9px] text-muted-foreground">est</span>
               </span>
-              <span className="w-8 shrink-0 text-right font-mono text-muted-foreground">
-                {avg != null ? `$${avg.toFixed(0)}` : "—"}
+              <span className={`shrink-0 font-mono text-[11px] ${diffColor}`}>
+                {diff != null ? `${diff > 0 ? "+" : ""}${diff}` : "—"}
               </span>
+              {p.lastYearSalary != null ? (
+                <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                  ${p.lastYearSalary}
+                  <span className="ml-0.5 text-[9px] text-muted-foreground/60">&apos;24</span>
+                </span>
+              ) : (
+                <span className="w-8 shrink-0" />
+              )}
             </div>
           )
         })}
@@ -153,19 +177,20 @@ function getSimilar(
   excludeIds: Set<string>,
   count = 3
 ): RankedPlayer[] {
-  const rank = selected.overallRank ?? 999
+  const targetEst = espnEst(selected) ?? 999
   return allPlayers
     .filter(
       (p) =>
         p.id !== selected.id &&
         !excludeIds.has(p.id) &&
+        !p.draftPick &&
         p.pos != null &&
         positions.includes(p.pos)
     )
     .sort(
       (a, b) =>
-        Math.abs((a.overallRank ?? 999) - rank) -
-        Math.abs((b.overallRank ?? 999) - rank)
+        Math.abs((espnEst(a) ?? 999) - targetEst) -
+        Math.abs((espnEst(b) ?? 999) - targetEst)
     )
     .slice(0, count)
 }
@@ -274,9 +299,8 @@ export function DashboardClient({
   const [rightPanel, setRightPanel] = useState<
     "details" | "my-list" | "my-team" | "picks" | "analytics"
   >("details")
-  const [draftingPlayer, setDraftingPlayer] = useState<RankedPlayer | null>(
-    null
-  )
+  const [draftingPlayer, setDraftingPlayer] = useState<RankedPlayer | null>(null)
+  const [nominatedPlayerId, setNominatedPlayerId] = useState<string | null>(null)
 
   useEffect(() => {
     const nominee = searchParams.get("nominee")
@@ -293,6 +317,7 @@ export function DashboardClient({
     if (match) {
       setSelectedPlayer(match)
       setRightPanel("details")
+      setNominatedPlayerId(match.id)
       router.replace("/dashboard")
     }
   }, [searchParams])
@@ -324,8 +349,21 @@ export function DashboardClient({
   useEffect(() => {
     const es = new EventSource("/api/draft/events")
     es.addEventListener("pick", refreshPicks)
+    es.addEventListener("nomination", (e: MessageEvent) => {
+      const playerName: string = e.data
+      const last = extractLastName(playerName).toLowerCase()
+      const first = playerName.trim().split(/\s+/)[0].toLowerCase()
+      const match =
+        players.find((p) => p.name.toLowerCase() === playerName.toLowerCase()) ??
+        players.find((p) => {
+          const n = p.name.toLowerCase()
+          return n.includes(last) && n.includes(first)
+        }) ??
+        players.find((p) => p.name.toLowerCase().includes(last))
+      if (match) setNominatedPlayerId(match.id)
+    })
     return () => es.close()
-  }, [refreshPicks])
+  }, [refreshPicks, players])
 
   // ── Draft handlers ────────────────────────────────────────────────────────
 
@@ -507,6 +545,7 @@ export function DashboardClient({
         <RankingsTable
           players={players}
           selectedPlayerId={selectedPlayer?.id}
+          nominatedPlayerId={nominatedPlayerId ?? undefined}
           onPlayerSelect={(p) => {
             setSelectedPlayer(p)
             setRightPanel("details")

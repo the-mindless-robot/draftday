@@ -11,7 +11,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { Search, Star, Target, Gavel, X } from "lucide-react"
-import { Fragment, useMemo, useState } from "react"
+import { Fragment, useMemo, useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { SortableHeader } from "@/components/ui/data-table"
@@ -76,6 +76,7 @@ type RankedPlayer = {
   scFbg250: string | null
   scFbgScaled: string | null
   scEspn200: string | null
+  lastYearSalary: number | null
   fbgRankDelta: number | null
   espnRankDelta: number | null
   flagged: boolean
@@ -361,12 +362,16 @@ const columns: ColumnDef<RankedPlayer>[] = [
     },
   },
   {
-    id: "salary_range",
-    header: ({ column }) => <SortableHeader column={column} label="Range" />,
+    id: "last_year_salary",
+    header: ({ column }) => <SortableHeader column={column} label="Last" />,
+    accessorFn: (row) => row.lastYearSalary,
     cell: ({ row }) => {
-      const v = parseSalary(row.original.scFbg250)
-      const range = v != null ? `$${Math.round(v * 1.1)} – $${Math.round(v * 0.9)}` : "—"
-      return <span>{range}</span>
+      const v = row.original.lastYearSalary
+      return (
+        <span className={v != null ? "font-mono text-muted-foreground" : "text-muted-foreground/40"}>
+          {v != null ? `$${v}` : "—"}
+        </span>
+      )
     },
   },
   {
@@ -458,6 +463,7 @@ const columns: ColumnDef<RankedPlayer>[] = [
 export function RankingsTable({
   players,
   selectedPlayerId,
+  nominatedPlayerId,
   onPlayerSelect,
   onFlag,
   onTarget,
@@ -465,6 +471,7 @@ export function RankingsTable({
 }: {
   players: RankedPlayer[]
   selectedPlayerId?: string
+  nominatedPlayerId?: string
   onPlayerSelect?: (player: RankedPlayer) => void
   onFlag?: (player: RankedPlayer) => void
   onTarget?: (player: RankedPlayer) => void
@@ -474,6 +481,13 @@ export function RankingsTable({
   const [activePosition, setActivePosition] = useState<Position>("overall")
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState("")
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!nominatedPlayerId) return
+    const el = scrollRef.current?.querySelector(`[data-player-id="${nominatedPlayerId}"]`)
+    el?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [nominatedPlayerId])
 
   const data = useMemo(() => {
     if (activePosition === "overall") return players
@@ -563,7 +577,7 @@ export function RankingsTable({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -611,6 +625,7 @@ export function RankingsTable({
                     </TableRow>
                   )}
                   <TableRow
+                    data-player-id={row.original.id}
                     data-state={
                       row.original.id === selectedPlayerId
                         ? "selected"
@@ -618,7 +633,9 @@ export function RankingsTable({
                     }
                     className={cn(
                       "cursor-pointer",
-                      row.original.draftPick && "opacity-40"
+                      row.original.draftPick && "opacity-40",
+                      row.original.id === nominatedPlayerId &&
+                        "outline outline-primary/60 bg-primary/10"
                     )}
                     onClick={() => onPlayerSelect?.(row.original)}
                   >

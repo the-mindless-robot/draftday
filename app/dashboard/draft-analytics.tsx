@@ -85,6 +85,16 @@ export function DraftAnalytics({ players }: { players: RankedPlayer[] }) {
                   const espnRaw = parseSalary(p.scEspn200)
                   const est =
                     espnRaw != null ? Math.round(espnRaw * 1.25) : null
+                  const diff =
+                    fbg != null && est != null ? fbg - est : null
+                  const diffColor =
+                    diff == null
+                      ? "text-muted-foreground/40"
+                      : diff > 0
+                        ? "text-green-400"
+                        : diff < 0
+                          ? "text-red-400"
+                          : "text-muted-foreground/40"
                   const tierChanged =
                     p.positionalTier !== next5[0].positionalTier
 
@@ -106,6 +116,12 @@ export function DraftAnalytics({ players }: { players: RankedPlayer[] }) {
                       </span>
                       <span className="w-8 shrink-0 text-right font-mono text-[10px] text-muted-foreground/60">
                         {est != null ? `$${est}` : "—"}
+                      </span>
+                      <span className={`w-8 shrink-0 text-right font-mono text-[10px] ${diffColor}`}>
+                        {diff != null ? `${diff > 0 ? "+" : ""}${diff}` : "—"}
+                      </span>
+                      <span className="w-8 shrink-0 text-right font-mono text-[10px] text-muted-foreground/50">
+                        {p.lastYearSalary != null ? `$${p.lastYearSalary}` : "—"}
                       </span>
                     </div>
                   )

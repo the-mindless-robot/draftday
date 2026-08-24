@@ -34,6 +34,7 @@ type RankedPlayer = {
   scEspn200: string | null
   fbgRankDelta: number | null
   espnRankDelta: number | null
+  lastYearSalary: number | null
   flagged: boolean
 }
 
@@ -400,6 +401,34 @@ export function PlayerDetail({
     .filter(Boolean)
     .join(" · ")
 
+  // Salary — computed once, used in header row + Salary Cap section
+  const fbg = parseSalary(player.scFbg250)
+  const espnBase = parseSalary(player.scEspn200)
+  const est = espnBase != null ? Math.round(espnBase * 1.25) : null
+  const diff = fbg != null && est != null ? fbg - est : null
+  const espnRange =
+    est != null && espnBase != null
+      ? `$${est} – $${espnBase}`
+      : espnBase != null
+        ? `$${espnBase}`
+        : null
+  const diffColor =
+    diff == null
+      ? "text-muted-foreground"
+      : diff > 0
+        ? "text-green-400"
+        : diff < 0
+          ? "text-red-400"
+          : "text-muted-foreground"
+  const deltaColor =
+    diff == null
+      ? "text-muted-foreground"
+      : Math.abs(diff) <= 2
+        ? "text-yellow-400"
+        : diff > 0
+          ? "text-green-400"
+          : "text-red-400"
+
   return (
     <div className="flex h-full flex-col gap-3">
       {/* Header */}
@@ -427,82 +456,59 @@ export function PlayerDetail({
             {teamBye || "—"}
           </p>
         </div>
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          <div className="flex flex-col items-center justify-center rounded-sm border border-muted-foreground p-1">
-            <p className="text-xl leading-none font-bold tabular-nums">
-              {player.overallRank ?? "—"}
-            </p>
-            <p className="text-[10px] text-muted-foreground">FBG</p>
+        {espnRange != null && (
+          <div className="shrink-0 text-right">
+            <p className="font-mono text-sm font-semibold">{espnRange}</p>
+            {/* <p className="text-[10px] text-muted-foreground">ESPN range</p> */}
           </div>
-          <div className="flex flex-col items-center justify-center rounded-sm border border-muted-foreground p-1">
-            <p className="text-xl leading-none font-bold tabular-nums">
-              {player.espnOverallRank ?? "—"}
-            </p>
-            <p className="text-[10px] text-muted-foreground">ESPN</p>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="h-px bg-border/50" />
 
-      {/* Salary */}
-      <div>
-        <SectionLabel>Salary Cap</SectionLabel>
-        {(() => {
-          const fbg250 = parseSalary(player.scFbg250)
-          const espn200 = parseSalary(player.scEspn200)
-          const espn250 = espn200 != null ? Math.round(espn200 * 1.25) : null
-          const fbgAvg = fbg250
-          const espnAvg =
-            espn200 != null && espn250 != null
-              ? (espn200 + espn250) / 2
-              : espn200
-          const delta = espnAvg != null && fbgAvg != null ? fbgAvg - espnAvg : null
-          const fbgRange =
-            fbg250 != null
-              ? `$${Math.round(fbg250 * 1.1)} – $${Math.round(fbg250 * 0.9)}`
-              : null
-          const espnRange =
-            espn250 != null && espn200 != null
-              ? `$${espn250} – $${espn200}`
-              : espn200 != null
-                ? `$${espn200}`
-                : null
-          const deltaColor =
-            delta == null
-              ? "text-muted-foreground"
-              : Math.abs(delta) <= 2
-                ? "text-yellow-400"
-                : delta > 0
-                  ? "text-green-400"
-                  : "text-red-400"
-          const deltaDisplay =
-            delta != null
-              ? `${delta > 0 ? "+" : ""}$${delta.toFixed(0)}`
-              : null
-          return (
-            <div className="grid grid-cols-3 gap-x-4 gap-y-2">
-              <KV label="FBG Range" value={fbgRange} />
-              <KV label="ESPN Range" value={espnRange} />
-              <KV
-                label="Δ Salary"
-                value={
-                  deltaDisplay != null ? (
-                    <span className={deltaColor}>{deltaDisplay}</span>
-                  ) : null
-                }
-              />
-            </div>
-          )
-        })()}
+      <div className="flex items-baseline justify-between">
+        <span className="text-md font-mono font-semibold">
+          {fbg != null ? `$${fbg.toFixed(0)}` : "—"}
+          <span className="ml-0.5 text-[10px] font-normal text-muted-foreground/60">
+            val
+          </span>
+        </span>
+        <span className="text-md font-mono font-semibold">
+          {est != null ? `$${est}` : "—"}
+          <span className="ml-0.5 text-[10px] font-normal text-muted-foreground/60">
+            est
+          </span>
+        </span>
+        <span className={`text-md font-mono font-semibold ${diffColor}`}>
+          {diff != null ? `${diff > 0 ? "+" : ""}$${diff.toFixed(0)}` : "—"}
+          <span className="ml-0.5 text-[10px] font-normal text-muted-foreground/60">
+            diff
+          </span>
+        </span>
+        {player.lastYearSalary != null && (
+          <span className="text-md font-mono font-semibold text-muted-foreground">
+            ${player.lastYearSalary}
+            <span className="ml-0.5 text-[10px] font-normal text-muted-foreground/60">
+              &apos;24
+            </span>
+          </span>
+        )}
       </div>
-
       <div className="h-px bg-border/50" />
-
-      {/* Rankings */}
       <div>
         <SectionLabel>Rankings</SectionLabel>
+        {rankingHistory?.fbg?.length || rankingHistory?.espn?.length ? (
+          <>
+            <div>
+              <RankHistoryChart
+                fbg={rankingHistory?.fbg ?? []}
+                espn={rankingHistory?.espn ?? []}
+              />
+            </div>
+          </>
+        ) : null}
+        <div className="my-2 h-px bg-border/50" />
+        {/* Rankings */}
         <div className="grid grid-cols-3 gap-x-4 gap-y-2">
           <KV label="FBG" value={player.overallRank} />
           <KV label="ESPN" value={player.espnOverallRank} />
@@ -542,19 +548,6 @@ export function PlayerDetail({
           <KV label="Pos Tier" value={player.positionalTier} />
         </div>
       </div>
-
-      {rankingHistory?.fbg?.length || rankingHistory?.espn?.length ? (
-        <>
-          <div className="h-px bg-border/50" />
-          <div>
-            <SectionLabel>Rank Movement</SectionLabel>
-            <RankHistoryChart
-              fbg={rankingHistory?.fbg ?? []}
-              espn={rankingHistory?.espn ?? []}
-            />
-          </div>
-        </>
-      ) : null}
 
       <div className="h-px bg-border/50" />
 

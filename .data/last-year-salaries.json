@@ -1,0 +1,1192 @@
+[
+  {
+    "playerName": "Justin Jefferson",
+    "nflTeam": "Min",
+    "pos": "WR",
+    "salary": 63,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "A.J. Brown",
+    "nflTeam": "Phi",
+    "pos": "WR",
+    "salary": 45,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Kyren Williams",
+    "nflTeam": "LAR",
+    "pos": "RB",
+    "salary": 49,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Tyreek Hill",
+    "nflTeam": "FA",
+    "pos": "WR",
+    "salary": 25,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Chase Brown",
+    "nflTeam": "Cin",
+    "pos": "RB",
+    "salary": 50,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Travis Hunter",
+    "nflTeam": "Jax",
+    "pos": "WR",
+    "salary": 3,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Michael Pittman Jr.",
+    "nflTeam": "Ind",
+    "pos": "WR",
+    "salary": 2,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Stefon Diggs",
+    "nflTeam": "NE",
+    "pos": "WR",
+    "salary": 2,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Kyler Murray",
+    "nflTeam": "Ari",
+    "pos": "QB",
+    "salary": 3,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Jake Ferguson",
+    "nflTeam": "Dal",
+    "pos": "TE",
+    "salary": 1,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Xavier Legette",
+    "nflTeam": "Car",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Trey Benson",
+    "nflTeam": "Ari",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Tua Tagovailoa",
+    "nflTeam": "Mia",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Colts D/ST",
+    "nflTeam": "Ind",
+    "pos": "D/ST",
+    "salary": 1,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Christian Kirk",
+    "nflTeam": "Hou",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Amari Cooper",
+    "nflTeam": "LV",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Cairo Santos",
+    "nflTeam": "Chi",
+    "pos": "K",
+    "salary": 1,
+    "fantasyTeam": "Las Vegas Philth"
+  },
+  {
+    "playerName": "Patrick Mahomes",
+    "nflTeam": "KC",
+    "pos": "QB",
+    "salary": 23,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Brian Thomas Jr.",
+    "nflTeam": "Jax",
+    "pos": "WR",
+    "salary": 54,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Travis Kelce",
+    "nflTeam": "KC",
+    "pos": "TE",
+    "salary": 14,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Lamar Jackson",
+    "nflTeam": "Bal",
+    "pos": "QB",
+    "salary": 40,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "James Conner",
+    "nflTeam": "Ari",
+    "pos": "RB",
+    "salary": 25,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Terry McLaurin",
+    "nflTeam": "Wsh",
+    "pos": "WR",
+    "salary": 31,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Xavier Worthy",
+    "nflTeam": "KC",
+    "pos": "WR",
+    "salary": 20,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "DeVonta Smith",
+    "nflTeam": "Phi",
+    "pos": "WR",
+    "salary": 23,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Rhamondre Stevenson",
+    "nflTeam": "NE",
+    "pos": "RB",
+    "salary": 7,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Lions D/ST",
+    "nflTeam": "Det",
+    "pos": "D/ST",
+    "salary": 1,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Harrison Butker",
+    "nflTeam": "KC",
+    "pos": "K",
+    "salary": 1,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Travis Etienne Jr.",
+    "nflTeam": "Jax",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Josh Downs",
+    "nflTeam": "Ind",
+    "pos": "WR",
+    "salary": 2,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Keenan Allen",
+    "nflTeam": "LAC",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Justin Fields",
+    "nflTeam": "NYJ",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Jayden Higgins",
+    "nflTeam": "Hou",
+    "pos": "WR",
+    "salary": 2,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Najee Harris",
+    "nflTeam": "LAC",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "Jimmy Pumpndump"
+  },
+  {
+    "playerName": "Christian McCaffrey",
+    "nflTeam": "SF",
+    "pos": "RB",
+    "salary": 60,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Amon-Ra St. Brown",
+    "nflTeam": "Det",
+    "pos": "WR",
+    "salary": 57,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Josh Jacobs",
+    "nflTeam": "GB",
+    "pos": "RB",
+    "salary": 40,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Ladd McConkey",
+    "nflTeam": "LAC",
+    "pos": "WR",
+    "salary": 35,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "David Njoku",
+    "nflTeam": "Cle",
+    "pos": "TE",
+    "salary": 4,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Brock Purdy",
+    "nflTeam": "SF",
+    "pos": "QB",
+    "salary": 6,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Mark Andrews",
+    "nflTeam": "Bal",
+    "pos": "TE",
+    "salary": 6,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Jakobi Meyers",
+    "nflTeam": "Jax",
+    "pos": "WR",
+    "salary": 6,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Steelers D/ST",
+    "nflTeam": "Pit",
+    "pos": "D/ST",
+    "salary": 8,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "David Montgomery",
+    "nflTeam": "Hou",
+    "pos": "RB",
+    "salary": 13,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Cam Skattebo",
+    "nflTeam": "NYG",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Chase McLaughlin",
+    "nflTeam": "TB",
+    "pos": "K",
+    "salary": 2,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Dallas Goedert",
+    "nflTeam": "Phi",
+    "pos": "TE",
+    "salary": 1,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "C.J. Stroud",
+    "nflTeam": "Hou",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Rashid Shaheed",
+    "nflTeam": "Sea",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Cedric Tillman",
+    "nflTeam": "Cle",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Dalton Kincaid",
+    "nflTeam": "Buf",
+    "pos": "TE",
+    "salary": 2,
+    "fantasyTeam": "I.E. Skull Crushers"
+  },
+  {
+    "playerName": "Ashton Jeanty",
+    "nflTeam": "LV",
+    "pos": "RB",
+    "salary": 39,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Puka Nacua",
+    "nflTeam": "LAR",
+    "pos": "WR",
+    "salary": 45,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Jahmyr Gibbs",
+    "nflTeam": "Det",
+    "pos": "RB",
+    "salary": 71,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Davante Adams",
+    "nflTeam": "LAR",
+    "pos": "WR",
+    "salary": 32,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "George Kittle",
+    "nflTeam": "SF",
+    "pos": "TE",
+    "salary": 28,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Baker Mayfield",
+    "nflTeam": "TB",
+    "pos": "QB",
+    "salary": 15,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Tyler Warren",
+    "nflTeam": "Ind",
+    "pos": "TE",
+    "salary": 8,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Keon Coleman",
+    "nflTeam": "Buf",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Caleb Williams",
+    "nflTeam": "Chi",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Nick Chubb",
+    "nflTeam": "Hou",
+    "pos": "RB",
+    "salary": 2,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Jayden Reed",
+    "nflTeam": "GB",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Rachaad White",
+    "nflTeam": "TB",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Jared Goff",
+    "nflTeam": "Det",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Ray Davis",
+    "nflTeam": "Buf",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Hollywood Brown",
+    "nflTeam": "KC",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Patriots D/ST",
+    "nflTeam": "NE",
+    "pos": "D/ST",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Chris Boswell",
+    "nflTeam": "Pit",
+    "pos": "K",
+    "salary": 1,
+    "fantasyTeam": "E BREAK"
+  },
+  {
+    "playerName": "Jameson Williams",
+    "nflTeam": "Det",
+    "pos": "WR",
+    "salary": 15,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Jaxon Smith-Njigba",
+    "nflTeam": "Sea",
+    "pos": "WR",
+    "salary": 27,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Alvin Kamara",
+    "nflTeam": "NO",
+    "pos": "RB",
+    "salary": 20,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Jayden Daniels",
+    "nflTeam": "Wsh",
+    "pos": "QB",
+    "salary": 30,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Brock Bowers",
+    "nflTeam": "LV",
+    "pos": "TE",
+    "salary": 35,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Calvin Ridley",
+    "nflTeam": "Ten",
+    "pos": "WR",
+    "salary": 15,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Zay Flowers",
+    "nflTeam": "Bal",
+    "pos": "WR",
+    "salary": 6,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Chris Olave",
+    "nflTeam": "NO",
+    "pos": "WR",
+    "salary": 2,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Tetairoa McMillan",
+    "nflTeam": "Car",
+    "pos": "WR",
+    "salary": 24,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Tyrone Tracy Jr.",
+    "nflTeam": "NYG",
+    "pos": "RB",
+    "salary": 17,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Mike Evans",
+    "nflTeam": "TB",
+    "pos": "WR",
+    "salary": 25,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "George Pickens",
+    "nflTeam": "Dal",
+    "pos": "WR",
+    "salary": 8,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "J.K. Dobbins",
+    "nflTeam": "Den",
+    "pos": "RB",
+    "salary": 10,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Jordan Mason",
+    "nflTeam": "Min",
+    "pos": "RB",
+    "salary": 3,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Ravens D/ST",
+    "nflTeam": "Bal",
+    "pos": "D/ST",
+    "salary": 9,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Zach Charbonnet",
+    "nflTeam": "Sea",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Jake Bates",
+    "nflTeam": "Det",
+    "pos": "K",
+    "salary": 1,
+    "fantasyTeam": "JOHNSONS"
+  },
+  {
+    "playerName": "Marvin Harrison Jr.",
+    "nflTeam": "Ari",
+    "pos": "WR",
+    "salary": 24,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Bucky Irving",
+    "nflTeam": "TB",
+    "pos": "RB",
+    "salary": 39,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Trey McBride",
+    "nflTeam": "Ari",
+    "pos": "TE",
+    "salary": 34,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Joe Burrow",
+    "nflTeam": "Cin",
+    "pos": "QB",
+    "salary": 26,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Derrick Henry",
+    "nflTeam": "Bal",
+    "pos": "RB",
+    "salary": 61,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "TreVeyon Henderson",
+    "nflTeam": "NE",
+    "pos": "RB",
+    "salary": 26,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Courtland Sutton",
+    "nflTeam": "Den",
+    "pos": "WR",
+    "salary": 16,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "T.J. Hockenson",
+    "nflTeam": "Min",
+    "pos": "TE",
+    "salary": 9,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Jacory Croskey-Merritt",
+    "nflTeam": "Wsh",
+    "pos": "RB",
+    "salary": 5,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Austin Ekeler",
+    "nflTeam": "Wsh",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Cooper Kupp",
+    "nflTeam": "Sea",
+    "pos": "WR",
+    "salary": 2,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Jordan Addison",
+    "nflTeam": "Min",
+    "pos": "WR",
+    "salary": 2,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Jauan Jennings",
+    "nflTeam": "SF",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Texans D/ST",
+    "nflTeam": "Hou",
+    "pos": "D/ST",
+    "salary": 1,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Bhayshul Tuten",
+    "nflTeam": "Jax",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Jaydon Blue",
+    "nflTeam": "Dal",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Brandon Aubrey",
+    "nflTeam": "Dal",
+    "pos": "K",
+    "salary": 1,
+    "fantasyTeam": "NIGGA NASTY"
+  },
+  {
+    "playerName": "Saquon Barkley",
+    "nflTeam": "Phi",
+    "pos": "RB",
+    "salary": 72,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Omarion Hampton",
+    "nflTeam": "LAC",
+    "pos": "RB",
+    "salary": 27,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Drake London",
+    "nflTeam": "Atl",
+    "pos": "WR",
+    "salary": 37,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Malik Nabers",
+    "nflTeam": "NYG",
+    "pos": "WR",
+    "salary": 58,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Chuba Hubbard",
+    "nflTeam": "Car",
+    "pos": "RB",
+    "salary": 22,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Emeka Egbuka",
+    "nflTeam": "TB",
+    "pos": "WR",
+    "salary": 6,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Rome Odunze",
+    "nflTeam": "Chi",
+    "pos": "WR",
+    "salary": 7,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Evan Engram",
+    "nflTeam": "Den",
+    "pos": "TE",
+    "salary": 6,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Kaleb Johnson",
+    "nflTeam": "Pit",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Matthew Golden",
+    "nflTeam": "GB",
+    "pos": "WR",
+    "salary": 2,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Ricky Pearsall",
+    "nflTeam": "SF",
+    "pos": "WR",
+    "salary": 4,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Dak Prescott",
+    "nflTeam": "Dal",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Khalil Shakir",
+    "nflTeam": "Buf",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Colston Loveland",
+    "nflTeam": "Chi",
+    "pos": "TE",
+    "salary": 2,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Cam Little",
+    "nflTeam": "Jax",
+    "pos": "K",
+    "salary": 2,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Eagles D/ST",
+    "nflTeam": "Phi",
+    "pos": "D/ST",
+    "salary": 1,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Braelon Allen",
+    "nflTeam": "NYJ",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "DEEZNUTS"
+  },
+  {
+    "playerName": "Nico Collins",
+    "nflTeam": "Hou",
+    "pos": "WR",
+    "salary": 44,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "De'Von Achane",
+    "nflTeam": "Mia",
+    "pos": "RB",
+    "salary": 51,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "James Cook III",
+    "nflTeam": "Buf",
+    "pos": "RB",
+    "salary": 31,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Kenneth Walker III",
+    "nflTeam": "Sea",
+    "pos": "RB",
+    "salary": 27,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Jalen Hurts",
+    "nflTeam": "Phi",
+    "pos": "QB",
+    "salary": 41,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "DJ Moore",
+    "nflTeam": "Chi",
+    "pos": "WR",
+    "salary": 19,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Sam LaPorta",
+    "nflTeam": "Det",
+    "pos": "TE",
+    "salary": 16,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Jerry Jeudy",
+    "nflTeam": "Cle",
+    "pos": "WR",
+    "salary": 10,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Aaron Jones Sr.",
+    "nflTeam": "Min",
+    "pos": "RB",
+    "salary": 3,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Tank Bigsby",
+    "nflTeam": "Phi",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Ollie Gordon II",
+    "nflTeam": "Mia",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Jerome Ford",
+    "nflTeam": "Cle",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Jordan Love",
+    "nflTeam": "GB",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Brandon Aiyuk",
+    "nflTeam": "SF",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Marvin Mims Jr.",
+    "nflTeam": "Den",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Bills D/ST",
+    "nflTeam": "Buf",
+    "pos": "D/ST",
+    "salary": 1,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Tyler Bass",
+    "nflTeam": "Buf",
+    "pos": "K",
+    "salary": 1,
+    "fantasyTeam": "Taint Uppercut"
+  },
+  {
+    "playerName": "Bijan Robinson",
+    "nflTeam": "Atl",
+    "pos": "RB",
+    "salary": 62,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Garrett Wilson",
+    "nflTeam": "NYJ",
+    "pos": "WR",
+    "salary": 26,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Jonathan Taylor",
+    "nflTeam": "Ind",
+    "pos": "RB",
+    "salary": 43,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Tee Higgins",
+    "nflTeam": "Cin",
+    "pos": "WR",
+    "salary": 29,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Breece Hall",
+    "nflTeam": "NYJ",
+    "pos": "RB",
+    "salary": 22,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "DK Metcalf",
+    "nflTeam": "Pit",
+    "pos": "WR",
+    "salary": 23,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Isiah Pacheco",
+    "nflTeam": "KC",
+    "pos": "RB",
+    "salary": 15,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Justin Herbert",
+    "nflTeam": "LAC",
+    "pos": "QB",
+    "salary": 5,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Bo Nix",
+    "nflTeam": "Den",
+    "pos": "QB",
+    "salary": 6,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Jaylen Waddle",
+    "nflTeam": "Mia",
+    "pos": "WR",
+    "salary": 12,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Javonte Williams",
+    "nflTeam": "Dal",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Deebo Samuel",
+    "nflTeam": "Wsh",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Kyle Pitts Sr.",
+    "nflTeam": "Atl",
+    "pos": "TE",
+    "salary": 1,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Darnell Mooney",
+    "nflTeam": "Atl",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Tyler Allgeier",
+    "nflTeam": "Atl",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Seahawks D/ST",
+    "nflTeam": "Sea",
+    "pos": "D/ST",
+    "salary": 1,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "Jake Elliott",
+    "nflTeam": "Phi",
+    "pos": "K",
+    "salary": 1,
+    "fantasyTeam": "Rainbow Sherbet"
+  },
+  {
+    "playerName": "CeeDee Lamb",
+    "nflTeam": "Dal",
+    "pos": "WR",
+    "salary": 60,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Ja'Marr Chase",
+    "nflTeam": "Cin",
+    "pos": "WR",
+    "salary": 66,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Josh Allen",
+    "nflTeam": "Buf",
+    "pos": "QB",
+    "salary": 38,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Tony Pollard",
+    "nflTeam": "Ten",
+    "pos": "RB",
+    "salary": 23,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "D'Andre Swift",
+    "nflTeam": "Chi",
+    "pos": "RB",
+    "salary": 19,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Tucker Kraft",
+    "nflTeam": "GB",
+    "pos": "TE",
+    "salary": 1,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Rashee Rice",
+    "nflTeam": "KC",
+    "pos": "WR",
+    "salary": 8,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Broncos D/ST",
+    "nflTeam": "Den",
+    "pos": "D/ST",
+    "salary": 12,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "RJ Harvey",
+    "nflTeam": "Den",
+    "pos": "RB",
+    "salary": 8,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Vikings D/ST",
+    "nflTeam": "Min",
+    "pos": "D/ST",
+    "salary": 4,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Drake Maye",
+    "nflTeam": "NE",
+    "pos": "QB",
+    "salary": 3,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Jaylen Warren",
+    "nflTeam": "Pit",
+    "pos": "RB",
+    "salary": 3,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Chris Godwin Jr.",
+    "nflTeam": "TB",
+    "pos": "WR",
+    "salary": 1,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Cameron Dicker",
+    "nflTeam": "LAC",
+    "pos": "K",
+    "salary": 1,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "J.J. McCarthy",
+    "nflTeam": "Min",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Joe Mixon",
+    "nflTeam": "Hou",
+    "pos": "RB",
+    "salary": 1,
+    "fantasyTeam": "High Strung"
+  },
+  {
+    "playerName": "Matthew Stafford",
+    "nflTeam": "LAR",
+    "pos": "QB",
+    "salary": 1,
+    "fantasyTeam": "High Strung"
+  }
+]
