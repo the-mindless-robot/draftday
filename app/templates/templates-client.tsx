@@ -155,7 +155,7 @@ function valueScore(p: Player): number {
       ? p.espnOverallRank - p.overallRank
       : 0
   const fbgSal = fbgSalary(p) ?? 0
-  const espnSal = parseSalary(p.scEspn200) ?? 0
+  const espnSal = (parseSalary(p.scEspn200) ?? 0) * 1.25
   const salDelta = fbgSal > 0 && espnSal > 0 ? fbgSal - espnSal : 0
   // salary delta (0–30 range) scaled ×4 to be comparable to rank delta (0–120 range)
   return rankDelta + salDelta * 4
@@ -601,14 +601,14 @@ type LivePick = Player & { draftPick: DraftPickInfo }
 const CASCADE_STEPS: { label: string; floor: number; limit: number }[] = [
   { label: "BENCH", floor: 3, limit: 4 },
   { label: "BENCH", floor: 1, limit: 3 },
-  { label: "TD",    floor: 2, limit: Infinity },
-  { label: "PK",    floor: 1, limit: Infinity },
-  { label: "K",     floor: 1, limit: Infinity },
-  { label: "FLEX",  floor: 2, limit: Infinity },
-  { label: "TE",    floor: 3, limit: Infinity },
-  { label: "QB",    floor: 3, limit: Infinity },
-  { label: "RB",    floor: 5, limit: Infinity },
-  { label: "WR",    floor: 5, limit: Infinity },
+  { label: "TD", floor: 2, limit: Infinity },
+  { label: "PK", floor: 1, limit: Infinity },
+  { label: "K", floor: 1, limit: Infinity },
+  { label: "FLEX", floor: 2, limit: Infinity },
+  { label: "TE", floor: 3, limit: Infinity },
+  { label: "QB", floor: 3, limit: Infinity },
+  { label: "RB", floor: 5, limit: Infinity },
+  { label: "WR", floor: 5, limit: Infinity },
 ]
 
 function applyBudgetCascade(
@@ -624,8 +624,9 @@ function applyBudgetCascade(
     let count = 0
     const candidates = slots
       .map((s, i) => ({ i, budget: result[i], slotLabel: s.label }))
-      .filter(({ i, budget, slotLabel }) =>
-        !filledIndices.has(i) && slotLabel === label && budget > floor
+      .filter(
+        ({ i, budget, slotLabel }) =>
+          !filledIndices.has(i) && slotLabel === label && budget > floor
       )
       .sort((a, b) => b.budget - a.budget)
     for (const { i, budget } of candidates) {
@@ -654,8 +655,13 @@ function assignPicksToSlots(
 
   const tryAssign = (indices: number[]) => {
     for (const i of indices) {
-      const pick = picks.find((p) => !usedIds.has(p.id) && posMatch(slots[i], p))
-      if (pick) { assignments.set(i, pick); usedIds.add(pick.id) }
+      const pick = picks.find(
+        (p) => !usedIds.has(p.id) && posMatch(slots[i], p)
+      )
+      if (pick) {
+        assignments.set(i, pick)
+        usedIds.add(pick.id)
+      }
     }
   }
 
@@ -714,7 +720,8 @@ function PlayerCard({
   onClick: (p: Player) => void
 }) {
   const salary = fbgSalary(player)
-  const espn = parseSalary(player.scEspn200)
+  const espnRaw = parseSalary(player.scEspn200)
+  const espn = espnRaw != null ? Math.round(espnRaw * 1.25) : null
   const delta = espn != null && salary != null ? espn - salary : null
   const colors = POS_COLORS[player.pos ?? ""] ?? {
     text: "text-muted-foreground",
@@ -743,7 +750,7 @@ function PlayerCard({
         </span>
         <div className="flex shrink-0 items-center gap-1">
           <span className="font-mono text-[10px] text-muted-foreground">
-            {salary != null ? `$${salary.toFixed(0)}` : "—"}
+            {espn != null ? `$${espn.toFixed(0)}` : "—"}
           </span>
           {delta != null && (
             <span
@@ -833,7 +840,9 @@ function SlotRow({
             ✓
           </span>
         ) : slot.isPriority ? (
-          <span className={cn("mt-1 shrink-0 text-[9px] leading-none", accentClass)}>
+          <span
+            className={cn("mt-1 shrink-0 text-[9px] leading-none", accentClass)}
+          >
             ★
           </span>
         ) : null}
@@ -864,7 +873,9 @@ function SlotRow({
             />
           </div>
         ) : (
-          <span className="font-mono text-xs font-semibold">${slot.budget}</span>
+          <span className="font-mono text-xs font-semibold">
+            ${slot.budget}
+          </span>
         )}
         {!lockedPick && slot.note && (
           <span className="text-[10px] leading-tight text-muted-foreground">
@@ -877,32 +888,42 @@ function SlotRow({
       <div className="flex min-w-0 flex-1 gap-2">
         {lockedPick ? (
           <>
-            <div className="min-w-0 flex-1 flex flex-col gap-1">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
               <PlayerCard
                 player={lockedPick}
                 isSelected={lockedPick.id === selectedPlayerId}
                 onClick={onPlayerSelect}
               />
-              {lockedPick.draftPick && (() => {
-                const paid = lockedPick.draftPick.salary
-                const budget = plannedBudget ?? slot.budget
-                const diff = budget - paid
-                return (
-                  <div className="flex gap-3 px-1 font-mono text-[10px]">
-                    <span>
-                      ${paid}
-                      <span className="ml-0.5 text-muted-foreground/50">paid</span>
-                    </span>
-                    <span className="text-muted-foreground/50">
-                      ${budget}
-                      <span className="ml-0.5 text-muted-foreground/40">bgt</span>
-                    </span>
-                    <span className={diff >= 0 ? "text-green-400" : "text-red-400"}>
-                      {diff > 0 ? "+" : ""}{diff}
-                    </span>
-                  </div>
-                )
-              })()}
+              {lockedPick.draftPick &&
+                (() => {
+                  const paid = lockedPick.draftPick.salary
+                  const budget = plannedBudget ?? slot.budget
+                  const diff = budget - paid
+                  return (
+                    <div className="flex gap-3 px-1 font-mono text-[10px]">
+                      <span>
+                        ${paid}
+                        <span className="ml-0.5 text-muted-foreground/50">
+                          paid
+                        </span>
+                      </span>
+                      <span className="text-muted-foreground/50">
+                        ${budget}
+                        <span className="ml-0.5 text-muted-foreground/40">
+                          bgt
+                        </span>
+                      </span>
+                      <span
+                        className={
+                          diff >= 0 ? "text-green-400" : "text-red-400"
+                        }
+                      >
+                        {diff > 0 ? "+" : ""}
+                        {diff}
+                      </span>
+                    </div>
+                  )
+                })()}
             </div>
             <EmptyCard />
             <EmptyCard />
@@ -1201,7 +1222,8 @@ export function TemplatesClient({
   const picksCount = draftedPlayers.length
 
   const myTeamPicks = useMemo(
-    () => players.filter((p): p is LivePick => p.draftPick?.team.isMyTeam === true),
+    () =>
+      players.filter((p): p is LivePick => p.draftPick?.team.isMyTeam === true),
     [players]
   )
   const amountSpent = myTeamPicks.reduce((s, p) => s + p.draftPick.salary, 0)
@@ -1236,7 +1258,12 @@ export function TemplatesClient({
     const overage = Math.max(0, unfilledTotal - remainingBudget)
     const adjustedBudgets =
       overage > 0
-        ? applyBudgetCascade(unfilledBudgets, activeSlots, filledIndices, overage)
+        ? applyBudgetCascade(
+            unfilledBudgets,
+            activeSlots,
+            filledIndices,
+            overage
+          )
         : unfilledBudgets
 
     liveBudgets = activeSlots.map((_, i) =>
@@ -1245,9 +1272,7 @@ export function TemplatesClient({
         : adjustedBudgets[i]
     )
 
-    const used = new Set<string>(
-      [...liveAssignments.values()].map((p) => p.id)
-    )
+    const used = new Set<string>([...liveAssignments.values()].map((p) => p.id))
     liveSlotPlayers = activeSlots.map((slot, i) => {
       if (liveAssignments.has(i)) return []
       const result = getSlotPlayers(
@@ -1606,7 +1631,7 @@ export function TemplatesClient({
                 ? { ...slot, budget: liveBudgets[i] ?? slot.budget }
                 : slot
               const displayPlayers = liveMode
-                ? liveSlotPlayers[i] ?? []
+                ? (liveSlotPlayers[i] ?? [])
                 : slotPlayers[i]
               return (
                 <SlotRow

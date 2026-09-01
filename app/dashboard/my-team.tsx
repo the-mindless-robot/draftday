@@ -108,16 +108,49 @@ function buildStem(slots: (RankedPlayer | null)[]): string {
   return `${qb}-${wr}-${rb}-${flex}`
 }
 
-const POS_COLORS: Record<string, { text: string; border: string; bg: string }> = {
-  QB:    { text: "text-blue-400",         border: "border-blue-400/30",   bg: "bg-blue-400/25" },
-  RB:    { text: "text-green-400",        border: "border-green-400/30",  bg: "bg-green-400/25" },
-  WR:    { text: "text-yellow-400",       border: "border-yellow-400/30", bg: "bg-yellow-400/25" },
-  TE:    { text: "text-orange-400",       border: "border-orange-400/30", bg: "bg-orange-400/25" },
-  FLEX:  { text: "text-pink-400",         border: "border-pink-400/30",   bg: "bg-pink-400/25" },
-  TD:    { text: "text-cyan-400",         border: "border-cyan-400/30",   bg: "bg-cyan-400/25" },
-  PK:    { text: "text-purple-400",       border: "border-purple-400/30", bg: "bg-purple-400/25" },
-  BENCH: { text: "text-muted-foreground", border: "border-border/40",     bg: "bg-muted-foreground/15" },
-}
+const POS_COLORS: Record<string, { text: string; border: string; bg: string }> =
+  {
+    QB: {
+      text: "text-blue-400",
+      border: "border-blue-400/30",
+      bg: "bg-blue-400/25",
+    },
+    RB: {
+      text: "text-green-400",
+      border: "border-green-400/30",
+      bg: "bg-green-400/25",
+    },
+    WR: {
+      text: "text-yellow-400",
+      border: "border-yellow-400/30",
+      bg: "bg-yellow-400/25",
+    },
+    TE: {
+      text: "text-orange-400",
+      border: "border-orange-400/30",
+      bg: "bg-orange-400/25",
+    },
+    FLEX: {
+      text: "text-pink-400",
+      border: "border-pink-400/30",
+      bg: "bg-pink-400/25",
+    },
+    TD: {
+      text: "text-cyan-400",
+      border: "border-cyan-400/30",
+      bg: "bg-cyan-400/25",
+    },
+    PK: {
+      text: "text-purple-400",
+      border: "border-purple-400/30",
+      bg: "bg-purple-400/25",
+    },
+    BENCH: {
+      text: "text-muted-foreground",
+      border: "border-border/40",
+      bg: "bg-muted-foreground/15",
+    },
+  }
 
 function parseSalary(val: string | null): number | null {
   if (!val) return null
@@ -330,7 +363,10 @@ export function MyTeam({
         </div>
         <div className="mt-1 flex items-center justify-between border-t border-border/30 pt-1">
           <span className="font-semibold text-muted-foreground">
-            Planned <span className="font-normal text-muted-foreground/60">(avg ${avgPerSlot} · max ${maxBid})</span>
+            Planned{" "}
+            <span className="font-normal text-muted-foreground/60">
+              (avg ${avgPerSlot} · max ${maxBid})
+            </span>
           </span>
           <span
             className={`font-mono font-semibold ${overPlanned ? "text-red-400" : "text-muted-foreground/70"}`}
