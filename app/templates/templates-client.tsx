@@ -714,11 +714,20 @@ function PlayerCard({
   player,
   isSelected,
   onClick,
+  isDragging,
+  onDragStart,
+  onDrop,
+  onDragEnd,
 }: {
   player: Player
   isSelected: boolean
   onClick: (p: Player) => void
+  isDragging?: boolean
+  onDragStart?: () => void
+  onDrop?: () => void
+  onDragEnd?: () => void
 }) {
+  const [isOver, setIsOver] = useState(false)
   const salary = fbgSalary(player)
   const espnRaw = parseSalary(player.scEspn200)
   const espn = espnRaw != null ? Math.round(espnRaw * 1.25) : null
@@ -727,12 +736,44 @@ function PlayerCard({
     text: "text-muted-foreground",
     border: "border-border",
   }
+  const draggable = !!onDragStart
 
   return (
     <div
+      draggable={draggable}
+      onDragStart={draggable ? onDragStart : undefined}
+      onDragOver={
+        draggable
+          ? (e) => {
+              e.preventDefault()
+              setIsOver(true)
+            }
+          : undefined
+      }
+      onDragLeave={draggable ? () => setIsOver(false) : undefined}
+      onDrop={
+        draggable
+          ? (e) => {
+              e.preventDefault()
+              setIsOver(false)
+              onDrop?.()
+            }
+          : undefined
+      }
+      onDragEnd={
+        draggable
+          ? () => {
+              setIsOver(false)
+              onDragEnd?.()
+            }
+          : undefined
+      }
       onClick={() => onClick(player)}
       className={cn(
-        "min-w-0 flex-1 cursor-pointer space-y-0.5 rounded border px-2 py-1.5 transition-colors",
+        "min-w-0 flex-1 space-y-0.5 rounded border px-2 py-1.5 transition-colors",
+        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        isDragging && "opacity-40",
+        isOver && !isDragging && "ring-2 ring-foreground/30",
         isSelected
           ? "border-foreground/40 bg-muted ring-1 ring-foreground/20"
           : cn("bg-muted/30 hover:bg-muted/60", colors.border)
@@ -805,6 +846,11 @@ function SlotRow({
   onBudgetChange,
   lockedPick,
   plannedBudget,
+  slotIndex,
+  dragSource,
+  onDragStart,
+  onDrop,
+  onDragEnd,
 }: {
   slot: RosterSlot
   players: Player[]
@@ -814,6 +860,11 @@ function SlotRow({
   onBudgetChange?: (v: number) => void
   lockedPick?: Player
   plannedBudget?: number
+  slotIndex?: number
+  dragSource?: { slotIndex: number; cardIndex: number } | null
+  onDragStart?: (slotIndex: number, cardIndex: number) => void
+  onDrop?: (toSlotIndex: number, toCardIndex: number) => void
+  onDragEnd?: () => void
 }) {
   const colors = POS_COLORS[slot.label] ?? POS_COLORS.BENCH
 
@@ -930,12 +981,27 @@ function SlotRow({
           </>
         ) : (
           <>
-            {players.map((p) => (
+            {players.map((p, cardIdx) => (
               <PlayerCard
                 key={p.id}
                 player={p}
                 isSelected={p.id === selectedPlayerId}
                 onClick={onPlayerSelect}
+                isDragging={
+                  dragSource?.slotIndex === slotIndex &&
+                  dragSource?.cardIndex === cardIdx
+                }
+                onDragStart={
+                  slotIndex != null && onDragStart
+                    ? () => onDragStart(slotIndex, cardIdx)
+                    : undefined
+                }
+                onDrop={
+                  slotIndex != null && onDrop
+                    ? () => onDrop(slotIndex, cardIdx)
+                    : undefined
+                }
+                onDragEnd={onDragEnd}
               />
             ))}
             {Array.from({ length: Math.max(0, 3 - players.length) }).map(
@@ -1024,6 +1090,15 @@ export function TemplatesClient({
     "details" | "my-list" | "picks" | "analytics"
   >("details")
   const [liveMode, setLiveMode] = useState(false)
+  const [dragSource, setDragSource] = useState<{
+    slotIndex: number
+    cardIndex: number
+  } | null>(null)
+  const [cardOrders, setCardOrders] = useState<Record<number, Player[]>>({})
+
+  useEffect(() => {
+    setCardOrders({})
+  }, [strategyId])
 
   useEffect(() => {
     const nominee = searchParams.get("nominee")
@@ -1211,6 +1286,37 @@ export function TemplatesClient({
     if (strategyId === `snapshot:${id}`) setStrategyId(STRATEGIES[0].id)
   }
 
+  function handleDragStart(slotIndex: number, cardIndex: number) {
+    setDragSource({ slotIndex, cardIndex })
+  }
+
+  function handleDrop(toSlotIndex: number, toCardIndex: number) {
+    if (!dragSource) return
+    const { slotIndex: fromSlotIndex, cardIndex: fromCardIndex } = dragSource
+    if (fromSlotIndex === toSlotIndex && fromCardIndex === toCardIndex) {
+      setDragSource(null)
+      return
+    }
+    const fromPlayers = [...displaySlotPlayers[fromSlotIndex]]
+    if (fromSlotIndex === toSlotIndex) {
+      const [moved] = fromPlayers.splice(fromCardIndex, 1)
+      fromPlayers.splice(toCardIndex, 0, moved)
+      setCardOrders((prev) => ({ ...prev, [fromSlotIndex]: fromPlayers }))
+    } else {
+      const toPlayers = [...displaySlotPlayers[toSlotIndex]]
+      const fromCard = fromPlayers[fromCardIndex]
+      const toCard = toPlayers[toCardIndex]
+      fromPlayers[fromCardIndex] = toCard
+      toPlayers[toCardIndex] = fromCard
+      setCardOrders((prev) => ({
+        ...prev,
+        [fromSlotIndex]: fromPlayers,
+        [toSlotIndex]: toPlayers,
+      }))
+    }
+    setDragSource(null)
+  }
+
   const draftedPlayers = useMemo(
     () =>
       players.filter((p) => p.draftPick !== null) as (Player & {
@@ -1339,6 +1445,16 @@ export function TemplatesClient({
       return result
     })
   }, [players, strategy, maxAbove, maxBelow, customBudgets, isCustom])
+
+  const displaySlotPlayers = useMemo(() => {
+    return slotPlayers.map((autoPlayers, i) => {
+      const override = cardOrders[i]
+      if (!override) return autoPlayers
+      const autoIdSet = new Set(autoPlayers.map((p) => p.id))
+      const valid = override.filter((p) => autoIdSet.has(p.id))
+      return valid.length === override.length ? valid : autoPlayers
+    })
+  }, [slotPlayers, cardOrders])
 
   const rosterPlayerIds = useMemo(
     () => new Set(slotPlayers.flat().map((p) => p.id)),
@@ -1632,7 +1748,7 @@ export function TemplatesClient({
                 : slot
               const displayPlayers = liveMode
                 ? (liveSlotPlayers[i] ?? [])
-                : slotPlayers[i]
+                : displaySlotPlayers[i]
               return (
                 <SlotRow
                   key={`${slot.label}-${i}`}
@@ -1643,6 +1759,11 @@ export function TemplatesClient({
                   onPlayerSelect={setSelectedPlayer}
                   lockedPick={lockedPick}
                   plannedBudget={liveMode ? activeSlots[i].budget : undefined}
+                  slotIndex={i}
+                  dragSource={!liveMode ? dragSource : null}
+                  onDragStart={!liveMode ? handleDragStart : undefined}
+                  onDrop={!liveMode ? handleDrop : undefined}
+                  onDragEnd={!liveMode ? () => setDragSource(null) : undefined}
                   onBudgetChange={
                     !liveMode && isCustom
                       ? (v) => {
