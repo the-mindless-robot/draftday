@@ -715,6 +715,7 @@ function PlayerCard({
   isSelected,
   onClick,
   isDragging,
+  isPinned,
   onDragStart,
   onDrop,
   onDragEnd,
@@ -723,6 +724,7 @@ function PlayerCard({
   isSelected: boolean
   onClick: (p: Player) => void
   isDragging?: boolean
+  isPinned?: boolean
   onDragStart?: () => void
   onDrop?: () => void
   onDragEnd?: () => void
@@ -774,6 +776,7 @@ function PlayerCard({
         draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         isDragging && "opacity-40",
         isOver && !isDragging && "ring-2 ring-foreground/30",
+        isPinned && "border-amber-400/40 bg-amber-400/5",
         isSelected
           ? "border-foreground/40 bg-muted ring-1 ring-foreground/20"
           : cn("bg-muted/30 hover:bg-muted/60", colors.border)
@@ -851,6 +854,10 @@ function SlotRow({
   onDragStart,
   onDrop,
   onDragEnd,
+  pinnedPlayer,
+  draggedPlayer,
+  onPinPlayer,
+  onUnpin,
 }: {
   slot: RosterSlot
   players: Player[]
@@ -865,14 +872,39 @@ function SlotRow({
   onDragStart?: (slotIndex: number, cardIndex: number) => void
   onDrop?: (toSlotIndex: number, toCardIndex: number) => void
   onDragEnd?: () => void
+  pinnedPlayer?: Player | null
+  draggedPlayer?: Player | null
+  onPinPlayer?: (slotIndex: number, player: Player) => void
+  onUnpin?: (slotIndex: number) => void
 }) {
   const colors = POS_COLORS[slot.label] ?? POS_COLORS.BENCH
+  const [isDropTarget, setIsDropTarget] = useState(false)
+  const isCompatible =
+    draggedPlayer != null &&
+    !lockedPick &&
+    slot.positions.some((p) => {
+      const pp = p.toUpperCase()
+      const dp = draggedPlayer.pos?.toUpperCase() ?? ""
+      return pp === dp || (pp === "TD" && (dp === "TD" || dp === "DST"))
+    })
 
   return (
     <div
+      onDragOver={isCompatible ? (e) => { e.preventDefault(); setIsDropTarget(true) } : undefined}
+      onDragLeave={isCompatible ? () => setIsDropTarget(false) : undefined}
+      onDrop={
+        isCompatible
+          ? (e) => {
+              e.preventDefault()
+              setIsDropTarget(false)
+              if (draggedPlayer && slotIndex != null) onPinPlayer?.(slotIndex, draggedPlayer)
+            }
+          : undefined
+      }
       className={cn(
         "flex items-stretch gap-3 border-b border-border/20 px-3 py-2 last:border-0",
-        lockedPick && "bg-green-400/5"
+        lockedPick && "bg-green-400/5",
+        isDropTarget && isCompatible && "ring-1 ring-blue-400/30 bg-blue-400/5"
       )}
     >
       {/* Slot label */}
@@ -886,7 +918,11 @@ function SlotRow({
         >
           {slot.label}
         </span>
-        {lockedPick ? (
+        {pinnedPlayer ? (
+          <span className="mt-1 shrink-0 text-[9px] leading-none text-amber-400">
+            pin
+          </span>
+        ) : lockedPick ? (
           <span className="mt-1 shrink-0 text-[9px] leading-none text-green-400">
             ✓
           </span>
@@ -910,6 +946,13 @@ function SlotRow({
               paid
             </span>
           </>
+        ) : pinnedPlayer ? (
+          <div className="flex flex-col gap-0.5">
+            <span className="font-mono text-xs font-semibold text-amber-400">
+              ${slot.budget}
+            </span>
+            <span className="text-[10px] leading-tight text-amber-400/50">pinned</span>
+          </div>
         ) : onBudgetChange ? (
           <div className="flex items-center gap-0.5">
             <span className="font-mono text-xs text-muted-foreground">$</span>
@@ -981,29 +1024,45 @@ function SlotRow({
           </>
         ) : (
           <>
-            {players.map((p, cardIdx) => (
-              <PlayerCard
-                key={p.id}
-                player={p}
-                isSelected={p.id === selectedPlayerId}
-                onClick={onPlayerSelect}
-                isDragging={
-                  dragSource?.slotIndex === slotIndex &&
-                  dragSource?.cardIndex === cardIdx
-                }
-                onDragStart={
-                  slotIndex != null && onDragStart
-                    ? () => onDragStart(slotIndex, cardIdx)
-                    : undefined
-                }
-                onDrop={
-                  slotIndex != null && onDrop
-                    ? () => onDrop(slotIndex, cardIdx)
-                    : undefined
-                }
-                onDragEnd={onDragEnd}
-              />
-            ))}
+            {players.map((p, cardIdx) => {
+              const isPinned = pinnedPlayer?.id === p.id
+              return (
+                <div key={p.id} className="relative min-w-0 flex-1">
+                  <PlayerCard
+                    player={p}
+                    isSelected={p.id === selectedPlayerId}
+                    onClick={onPlayerSelect}
+                    isPinned={isPinned}
+                    isDragging={
+                      dragSource?.slotIndex === slotIndex &&
+                      dragSource?.cardIndex === cardIdx
+                    }
+                    onDragStart={
+                      !isPinned && slotIndex != null && onDragStart
+                        ? () => onDragStart(slotIndex, cardIdx)
+                        : undefined
+                    }
+                    onDrop={
+                      slotIndex != null && onDrop
+                        ? () => onDrop(slotIndex, cardIdx)
+                        : undefined
+                    }
+                    onDragEnd={onDragEnd}
+                  />
+                  {isPinned && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (slotIndex != null) onUnpin?.(slotIndex)
+                      }}
+                      className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-400/20 text-[9px] font-bold text-amber-400 hover:bg-amber-400/40"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              )
+            })}
             {Array.from({ length: Math.max(0, 3 - players.length) }).map(
               (_, i) => (
                 <EmptyCard key={i} />
@@ -1095,9 +1154,19 @@ export function TemplatesClient({
     cardIndex: number
   } | null>(null)
   const [cardOrders, setCardOrders] = useState<Record<number, Player[]>>({})
+  const [slotPins, setSlotPins] = useState<Record<number, Player>>({})
+  const [playerSearch, setPlayerSearch] = useState("")
+  const [draggedPlayer, setDraggedPlayer] = useState<Player | null>(null)
+
+  useEffect(() => {
+    const handle = () => setDraggedPlayer(null)
+    document.addEventListener("dragend", handle)
+    return () => document.removeEventListener("dragend", handle)
+  }, [])
 
   useEffect(() => {
     setCardOrders({})
+    setSlotPins({})
   }, [strategyId])
 
   useEffect(() => {
@@ -1317,6 +1386,23 @@ export function TemplatesClient({
     setDragSource(null)
   }
 
+  function handlePinPlayer(slotIndex: number, player: Player) {
+    setSlotPins((prev) => ({ ...prev, [slotIndex]: player }))
+    setCardOrders((prev) => {
+      const next = { ...prev }
+      delete next[slotIndex]
+      return next
+    })
+  }
+
+  function handleUnpin(slotIndex: number) {
+    setSlotPins((prev) => {
+      const next = { ...prev }
+      delete next[slotIndex]
+      return next
+    })
+  }
+
   const draftedPlayers = useMemo(
     () =>
       players.filter((p) => p.draftPick !== null) as (Player & {
@@ -1429,12 +1515,18 @@ export function TemplatesClient({
           budget: customBudgets[i] ?? slot.budget,
         }))
       : strategy.slots
-    const used = new Set<string>()
-    return slots.map((slot) => {
+    const used = new Set<string>(Object.values(slotPins).map((p) => p.id))
+    return slots.map((slot, i) => {
+      const pin = slotPins[i]
+      let budget = slot.budget
+      if (pin) {
+        const espnRaw = parseSalary(pin.scEspn200)
+        if (espnRaw != null) budget = Math.round(espnRaw * 1.25)
+      }
       const result = getSlotPlayers(
         players,
         slot.positions,
-        slot.budget,
+        budget,
         3,
         used,
         strategy.slotSortFn,
@@ -1444,17 +1536,27 @@ export function TemplatesClient({
       result.forEach((p) => used.add(p.id))
       return result
     })
-  }, [players, strategy, maxAbove, maxBelow, customBudgets, isCustom])
+  }, [players, strategy, maxAbove, maxBelow, customBudgets, isCustom, slotPins])
 
   const displaySlotPlayers = useMemo(() => {
     return slotPlayers.map((autoPlayers, i) => {
+      const pin = slotPins[i]
+      let result: Player[]
       const override = cardOrders[i]
-      if (!override) return autoPlayers
-      const autoIdSet = new Set(autoPlayers.map((p) => p.id))
-      const valid = override.filter((p) => autoIdSet.has(p.id))
-      return valid.length === override.length ? valid : autoPlayers
+      if (override) {
+        const autoIdSet = new Set(autoPlayers.map((p) => p.id))
+        const valid = override.filter((p) => autoIdSet.has(p.id))
+        result = valid.length === override.length ? valid : autoPlayers
+      } else {
+        result = autoPlayers
+      }
+      if (pin) {
+        const rest = result.filter((p) => p.id !== pin.id).slice(0, 2)
+        return [pin, ...rest]
+      }
+      return result
     })
-  }, [slotPlayers, cardOrders])
+  }, [slotPlayers, cardOrders, slotPins])
 
   const rosterPlayerIds = useMemo(
     () => new Set(slotPlayers.flat().map((p) => p.id)),
@@ -1478,6 +1580,28 @@ export function TemplatesClient({
       )
       .slice(0, 5)
   }, [selectedPlayer, players, rosterPlayerIds])
+
+  const searchResults = useMemo(() => {
+    const q = playerSearch.trim().toLowerCase()
+    if (!q) return []
+    return players
+      .filter((p) => p.name.toLowerCase().includes(q) && !p.draftPick)
+      .sort((a, b) => (a.overallRank ?? 999) - (b.overallRank ?? 999))
+      .slice(0, 8)
+  }, [playerSearch, players])
+
+  const compatibleSlots = useMemo(() => {
+    if (!selectedPlayer) return []
+    const pos = selectedPlayer.pos?.toUpperCase() ?? ""
+    return activeSlots
+      .map((slot, i) => ({ slot, i }))
+      .filter(({ slot }) =>
+        slot.positions.some((p) => {
+          const pp = p.toUpperCase()
+          return pp === pos || (pp === "TD" && (pos === "TD" || pos === "DST"))
+        })
+      )
+  }, [selectedPlayer, activeSlots])
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-hidden p-4">
@@ -1743,9 +1867,12 @@ export function TemplatesClient({
           <div className="flex-1 overflow-y-auto">
             {activeSlots.map((slot, i) => {
               const lockedPick = liveMode ? liveAssignments.get(i) : undefined
+              const pinBudget = slotPins[i]
+                ? Math.round((parseSalary(slotPins[i].scEspn200) ?? 0) * 1.25)
+                : null
               const displaySlot = liveMode
                 ? { ...slot, budget: liveBudgets[i] ?? slot.budget }
-                : slot
+                : { ...slot, budget: pinBudget ?? slot.budget }
               const displayPlayers = liveMode
                 ? (liveSlotPlayers[i] ?? [])
                 : displaySlotPlayers[i]
@@ -1764,8 +1891,12 @@ export function TemplatesClient({
                   onDragStart={!liveMode ? handleDragStart : undefined}
                   onDrop={!liveMode ? handleDrop : undefined}
                   onDragEnd={!liveMode ? () => setDragSource(null) : undefined}
+                  pinnedPlayer={!liveMode ? (slotPins[i] ?? null) : null}
+                  draggedPlayer={!liveMode ? draggedPlayer : null}
+                  onPinPlayer={!liveMode ? handlePinPlayer : undefined}
+                  onUnpin={!liveMode ? handleUnpin : undefined}
                   onBudgetChange={
-                    !liveMode && isCustom
+                    !liveMode && isCustom && !slotPins[i]
                       ? (v) => {
                           setCustomBudgets((prev) => {
                             const next = [...prev]
@@ -1844,11 +1975,101 @@ export function TemplatesClient({
             </div>
 
             <div className={rightPanel !== "details" ? "hidden" : ""}>
+              {/* Player search */}
+              <div className="relative mb-3">
+                <input
+                  type="text"
+                  value={playerSearch}
+                  onChange={(e) => setPlayerSearch(e.target.value)}
+                  placeholder="Search players..."
+                  className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+                />
+                {searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 z-10 mt-1 w-full overflow-hidden rounded-lg border border-border bg-background shadow-lg">
+                    {searchResults.map((p) => {
+                      const espnRaw = parseSalary(p.scEspn200)
+                      const est = espnRaw != null ? Math.round(espnRaw * 1.25) : null
+                      const colors = POS_COLORS[p.pos ?? ""] ?? { text: "text-muted-foreground" }
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => {
+                            setSelectedPlayer(p)
+                            setPlayerSearch("")
+                            setRightPanel("details")
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-muted"
+                        >
+                          <span className={cn("w-8 shrink-0 font-mono font-semibold", colors.text)}>
+                            {p.pos}{p.positionalRank ?? ""}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate font-medium">{p.name}</span>
+                          <span className="shrink-0 font-mono text-muted-foreground">
+                            {est != null ? `$${est}` : "—"}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
               <PlayerDetail
                 player={selectedPlayer}
                 globalMax={globalMax}
                 rankingHistory={null}
               />
+
+              {/* Pin to Slot */}
+              {selectedPlayer && compatibleSlots.length > 0 && (
+                <div className="mt-3 border-t border-border/50 pt-3">
+                  <p className="mb-2 text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
+                    Pin to Slot
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {compatibleSlots.map(({ slot, i }) => {
+                      const isPinned = slotPins[i]?.id === selectedPlayer.id
+                      const hasOtherPin = !!slotPins[i] && !isPinned
+                      const espnRaw = parseSalary(selectedPlayer.scEspn200)
+                      const newBudget = espnRaw != null ? Math.round(espnRaw * 1.25) : null
+                      const colors = POS_COLORS[slot.label] ?? POS_COLORS.BENCH
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            if (isPinned) {
+                              handleUnpin(i)
+                            } else {
+                              handlePinPlayer(i, selectedPlayer)
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors",
+                            isPinned
+                              ? "border-amber-400/30 bg-amber-400/10 text-amber-400"
+                              : hasOtherPin
+                                ? "border-border/40 bg-muted/20 text-muted-foreground hover:bg-muted/50"
+                                : "border-border/40 bg-muted/30 hover:bg-muted/60"
+                          )}
+                        >
+                          <span className={cn("w-10 shrink-0 font-mono font-bold text-[10px]", colors.text)}>
+                            {slot.label}
+                          </span>
+                          <span className="flex-1 text-[10px] text-muted-foreground">
+                            {hasOtherPin ? `pinned: ${slotPins[i]!.name.split(" ").pop()}` : `$${slot.budget}`}
+                            {newBudget != null && !isPinned && !hasOtherPin && (
+                              <span className="ml-1 text-amber-400">→ ${newBudget}</span>
+                            )}
+                          </span>
+                          <span className="shrink-0 text-[10px]">
+                            {isPinned ? "unpin" : hasOtherPin ? "replace" : "pin"}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
             <div className={rightPanel !== "my-list" ? "hidden" : ""}>
               <MyList
@@ -1865,6 +2086,10 @@ export function TemplatesClient({
                 onTarget={(id) => {
                   const p = players.find((pl) => pl.id === id)
                   if (p) handleTarget(p)
+                }}
+                onDragStart={(p) => {
+                  const full = players.find((pl) => pl.id === p.id) ?? null
+                  setDraggedPlayer(full)
                 }}
               />
             </div>

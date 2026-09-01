@@ -51,18 +51,22 @@ function PlayerRow({
   onPlayerSelect,
   onFlag,
   onTarget,
+  onDragStart,
 }: {
   player: RankedPlayer
   onPlayerSelect?: (p: RankedPlayer) => void
   onFlag?: (id: string) => void
   onTarget?: (id: string) => void
+  onDragStart?: (player: RankedPlayer) => void
 }) {
   const isDrafted = player.draftPick !== null
   const isMyPick = player.draftPick?.team.isMyTeam ?? false
 
   return (
     <div
-      className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/50 ${isMyPick ? "bg-primary/8 opacity-70" : isDrafted ? "opacity-30" : ""}`}
+      draggable={!!onDragStart}
+      onDragStart={(e) => { e.stopPropagation(); onDragStart?.(player) }}
+      className={`flex items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/50 ${onDragStart ? "cursor-grab" : "cursor-pointer"} ${isMyPick ? "bg-primary/8 opacity-70" : isDrafted ? "opacity-30" : ""}`}
       onClick={() => onPlayerSelect?.(player)}
     >
       <span className={`w-8 shrink-0 font-mono font-semibold ${posColor(player.pos)}`}>
@@ -115,11 +119,13 @@ export function MyList({
   onPlayerSelect,
   onFlag,
   onTarget,
+  onDragStart,
 }: {
   players: RankedPlayer[]
   onPlayerSelect?: (player: RankedPlayer) => void
   onFlag?: (id: string) => void
   onTarget?: (id: string) => void
+  onDragStart?: (player: RankedPlayer) => void
 }) {
   const flagged = players.filter((p) => p.flagged)
 
@@ -170,7 +176,7 @@ export function MyList({
                   </p>
                 )}
                 {targets.map((p) => (
-                  <PlayerRow key={p.id} player={p} onPlayerSelect={onPlayerSelect} onFlag={onFlag} onTarget={onTarget} />
+                  <PlayerRow key={p.id} player={p} onPlayerSelect={onPlayerSelect} onFlag={onFlag} onTarget={onTarget} onDragStart={onDragStart} />
                 ))}
               </>
             )}
@@ -182,7 +188,7 @@ export function MyList({
                   </p>
                 )}
                 {watching.map((p) => (
-                  <PlayerRow key={p.id} player={p} onPlayerSelect={onPlayerSelect} onFlag={onFlag} onTarget={onTarget} />
+                  <PlayerRow key={p.id} player={p} onPlayerSelect={onPlayerSelect} onFlag={onFlag} onTarget={onTarget} onDragStart={onDragStart} />
                 ))}
               </>
             )}
