@@ -1338,10 +1338,14 @@ export function TemplatesClient({
     if (!saveName.trim()) return
     setSavingTemplate(true)
     try {
+      const isCurrentCustom = strategyId === "custom" || strategyId.startsWith("snapshot:")
+      const budgetsToSave = isCurrentCustom
+        ? customBudgets
+        : (STRATEGIES.find((s) => s.id === strategyId) ?? STRATEGIES[0]).slots.map((s) => s.budget)
       await fetch("/api/team-snapshots", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: saveName.trim(), budgets: customBudgets }),
+        body: JSON.stringify({ name: saveName.trim(), budgets: budgetsToSave }),
       })
       await fetchSnapshots()
       setSaveName("")
