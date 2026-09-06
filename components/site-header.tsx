@@ -32,6 +32,9 @@ export function SiteHeader() {
           <Button variant={"secondary"} asChild>
             <Link href="/teams">Teams</Link>
           </Button>
+          <Button variant={"secondary"} asChild>
+            <Link href="/templates">My Team</Link>
+          </Button>
         </div>
         <NominationBadge />
       </div>

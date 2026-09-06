@@ -1125,6 +1125,8 @@ function PositionalComps({
   )
 }
 
+let _liveMode = false
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function TemplatesClient({
@@ -1148,7 +1150,7 @@ export function TemplatesClient({
   const [rightPanel, setRightPanel] = useState<
     "details" | "my-list" | "picks" | "analytics"
   >("details")
-  const [liveMode, setLiveMode] = useState(false)
+  const [liveMode, setLiveMode] = useState(_liveMode)
   const [dragSource, setDragSource] = useState<{
     slotIndex: number
     cardIndex: number
@@ -1435,12 +1437,18 @@ export function TemplatesClient({
     : strategy.slots
 
   // ── Live Draft computations ───────────────────────────────────────────────
-  let liveAssignments = new Map<number, LivePick>()
+  const liveAssignments = useMemo(
+    () =>
+      liveMode
+        ? assignPicksToSlots(activeSlots, myTeamPicks)
+        : new Map<number, LivePick>(),
+    [liveMode, activeSlots, myTeamPicks]
+  )
+
   let liveBudgets: number[] = []
   let liveSlotPlayers: Player[][] = []
 
   if (liveMode) {
-    liveAssignments = assignPicksToSlots(activeSlots, myTeamPicks)
     const filledIndices = new Set(liveAssignments.keys())
 
     const unfilledBudgets = activeSlots.map((s, i) =>
@@ -1600,13 +1608,14 @@ export function TemplatesClient({
     const pos = selectedPlayer.pos?.toUpperCase() ?? ""
     return activeSlots
       .map((slot, i) => ({ slot, i }))
-      .filter(({ slot }) =>
-        slot.positions.some((p) => {
+      .filter(({ slot, i }) => {
+        if (liveMode && liveAssignments.has(i)) return false
+        return slot.positions.some((p) => {
           const pp = p.toUpperCase()
           return pp === pos || (pp === "TD" && (pos === "TD" || pos === "DST"))
         })
-      )
-  }, [selectedPlayer, activeSlots])
+      })
+  }, [selectedPlayer, activeSlots, liveMode, liveAssignments])
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-hidden p-4">
@@ -1694,7 +1703,7 @@ export function TemplatesClient({
           </button>
         )}
         <button
-          onClick={() => setLiveMode((v) => !v)}
+          onClick={() => setLiveMode((v) => { _liveMode = !v; return !v })}
           className={cn(
             "ml-auto rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
             liveMode
@@ -1875,11 +1884,23 @@ export function TemplatesClient({
               const pinBudget = slotPins[i]
                 ? Math.round((parseSalary(slotPins[i].scEspn200) ?? 0) * 1.25)
                 : null
-              const displaySlot = liveMode
-                ? { ...slot, budget: liveBudgets[i] ?? slot.budget }
-                : { ...slot, budget: pinBudget ?? slot.budget }
+              const displaySlot = {
+                ...slot,
+                budget: pinBudget ?? (liveMode ? (liveBudgets[i] ?? slot.budget) : slot.budget),
+              }
               const displayPlayers = liveMode
-                ? (liveSlotPlayers[i] ?? [])
+                ? (() => {
+                    if (lockedPick) return []
+                    const auto = liveSlotPlayers[i] ?? []
+                    const pin = slotPins[i]
+                    if (pin) {
+                      const currentPin = players.find((p) => p.id === pin.id)
+                      if (currentPin && !currentPin.draftPick) {
+                        return [currentPin, ...auto.filter((p) => p.id !== pin.id).slice(0, 2)]
+                      }
+                    }
+                    return auto
+                  })()
                 : displaySlotPlayers[i]
               return (
                 <SlotRow
@@ -1892,14 +1913,14 @@ export function TemplatesClient({
                   lockedPick={lockedPick}
                   plannedBudget={liveMode ? activeSlots[i].budget : undefined}
                   slotIndex={i}
-                  dragSource={!liveMode ? dragSource : null}
-                  onDragStart={!liveMode ? handleDragStart : undefined}
-                  onDrop={!liveMode ? handleDrop : undefined}
-                  onDragEnd={!liveMode ? () => setDragSource(null) : undefined}
-                  pinnedPlayer={!liveMode ? (slotPins[i] ?? null) : null}
-                  draggedPlayer={!liveMode ? draggedPlayer : null}
-                  onPinPlayer={!liveMode ? handlePinPlayer : undefined}
-                  onUnpin={!liveMode ? handleUnpin : undefined}
+                  dragSource={!lockedPick ? dragSource : null}
+                  onDragStart={!lockedPick ? handleDragStart : undefined}
+                  onDrop={!lockedPick ? handleDrop : undefined}
+                  onDragEnd={!lockedPick ? () => setDragSource(null) : undefined}
+                  pinnedPlayer={!lockedPick ? (slotPins[i] ?? null) : null}
+                  draggedPlayer={!lockedPick ? draggedPlayer : null}
+                  onPinPlayer={!lockedPick ? handlePinPlayer : undefined}
+                  onUnpin={!lockedPick ? handleUnpin : undefined}
                   onBudgetChange={
                     !liveMode && isCustom && !slotPins[i]
                       ? (v) => {
