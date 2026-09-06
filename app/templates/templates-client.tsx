@@ -1482,17 +1482,19 @@ export function TemplatesClient({
     })
   }
 
-  const displayBudgets: Record<string, SlotBudget> = isCustom
-    ? (() => {
-        const acc: Record<string, SlotBudget> = {}
-        activeSlots.forEach((slot) => {
-          if (!acc[slot.label]) acc[slot.label] = { slots: 0, budget: 0 }
-          acc[slot.label].slots++
-          acc[slot.label].budget += slot.budget
-        })
-        return acc
-      })()
-    : strategy.budgets
+  const displayBudgets: Record<string, SlotBudget> = (() => {
+    const acc: Record<string, SlotBudget> = {}
+    activeSlots.forEach((slot, i) => {
+      const pinBudget = slotPins[i]
+        ? Math.round((parseSalary(slotPins[i].scEspn200) ?? 0) * 1.25)
+        : null
+      const budget = pinBudget ?? slot.budget
+      if (!acc[slot.label]) acc[slot.label] = { slots: 0, budget: 0 }
+      acc[slot.label].slots++
+      acc[slot.label].budget += budget
+    })
+    return acc
+  })()
 
   const totalBudgeted = Object.values(displayBudgets).reduce(
     (s, b) => s + b.budget,
@@ -1551,12 +1553,15 @@ export function TemplatesClient({
         result = autoPlayers
       }
       if (pin) {
-        const rest = result.filter((p) => p.id !== pin.id).slice(0, 2)
-        return [pin, ...rest]
+        const currentPin = players.find((p) => p.id === pin.id)
+        if (currentPin && !currentPin.draftPick) {
+          const rest = result.filter((p) => p.id !== pin.id).slice(0, 2)
+          return [currentPin, ...rest]
+        }
       }
       return result
     })
-  }, [slotPlayers, cardOrders, slotPins])
+  }, [slotPlayers, cardOrders, slotPins, players])
 
   const rosterPlayerIds = useMemo(
     () => new Set(slotPlayers.flat().map((p) => p.id)),

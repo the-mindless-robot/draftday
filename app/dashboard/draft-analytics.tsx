@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import type { RankedPlayer } from "./dashboard-client"
 
 function parseSalary(val: string | null): number | null {
@@ -25,6 +28,8 @@ const POS_COLORS: Record<string, string> = {
 }
 
 export function DraftAnalytics({ players }: { players: RankedPlayer[] }) {
+  const [mode, setMode] = useState<"board" | "targets">("board")
+
   const sections = POSITIONS.map(({ label, match }) => {
     const atPos = players.filter(
       (p) => p.pos != null && match.includes(p.pos.toUpperCase())
@@ -40,13 +45,42 @@ export function DraftAnalytics({ players }: { players: RankedPlayer[] }) {
       : 0
     const next5 = available.slice(0, 5)
 
-    return { label, drafted, available, currentTier, leftInTier, next5 }
+    const targets = available.filter((p) => p.targeted)
+    const watching = available.filter((p) => p.flagged && !p.targeted)
+    const targetList = [...targets, ...watching].slice(0, 5)
+
+    return { label, drafted, available, currentTier, leftInTier, next5, targetList }
   })
 
   return (
     <div className="flex flex-col gap-4">
-      {sections.map(({ label, drafted, currentTier, leftInTier, next5 }) => {
+      {/* Mode toggle */}
+      <div className="flex gap-0.5 self-start rounded-md bg-muted p-0.5">
+        <button
+          onClick={() => setMode("board")}
+          className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+            mode === "board"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Board
+        </button>
+        <button
+          onClick={() => setMode("targets")}
+          className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+            mode === "targets"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Targets
+        </button>
+      </div>
+
+      {sections.map(({ label, drafted, currentTier, leftInTier, next5, targetList }) => {
         const colors = POS_COLORS[label] ?? ""
+        const list = mode === "targets" ? targetList : next5
 
         return (
           <div key={label}>
@@ -60,7 +94,7 @@ export function DraftAnalytics({ players }: { players: RankedPlayer[] }) {
               <span className="font-mono text-[11px] text-muted-foreground">
                 {drafted.length} drafted
               </span>
-              {currentTier && (
+              {mode === "board" && currentTier && (
                 <>
                   <span className="text-muted-foreground/30">·</span>
                   <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground">
@@ -73,20 +107,18 @@ export function DraftAnalytics({ players }: { players: RankedPlayer[] }) {
               )}
             </div>
 
-            {/* Next 5 available */}
-            {next5.length === 0 ? (
+            {/* Player list */}
+            {list.length === 0 ? (
               <p className="py-1 text-[11px] text-muted-foreground/40">
-                None available
+                {mode === "targets" ? "No targets" : "None available"}
               </p>
             ) : (
               <div className="flex flex-col gap-0.5">
-                {next5.map((p) => {
+                {list.map((p) => {
                   const fbg = parseSalary(p.scFbg250)
                   const espnRaw = parseSalary(p.scEspn200)
-                  const est =
-                    espnRaw != null ? Math.round(espnRaw * 1.25) : null
-                  const diff =
-                    fbg != null && est != null ? fbg - est : null
+                  const est = espnRaw != null ? Math.round(espnRaw * 1.25) : null
+                  const diff = fbg != null && est != null ? fbg - est : null
                   const diffColor =
                     diff == null
                       ? "text-muted-foreground/40"
@@ -96,12 +128,19 @@ export function DraftAnalytics({ players }: { players: RankedPlayer[] }) {
                           ? "text-red-400"
                           : "text-muted-foreground/40"
                   const tierChanged =
-                    p.positionalTier !== next5[0].positionalTier
+                    mode === "board" && p.positionalTier !== next5[0]?.positionalTier
+
+                  const rowBg =
+                    mode === "targets"
+                      ? p.targeted
+                        ? "bg-primary/10 rounded"
+                        : "bg-yellow-400/10 rounded"
+                      : ""
 
                   return (
                     <div
                       key={p.id}
-                      className={`flex items-center gap-1.5 ${tierChanged ? "opacity-50" : ""}`}
+                      className={`flex items-center gap-1.5 px-1 ${tierChanged ? "opacity-50" : ""} ${rowBg}`}
                     >
                       <span className="w-6 shrink-0 text-right font-mono text-[10px] text-muted-foreground/50">
                         {p.positionalRank}
